@@ -7,9 +7,9 @@
 #include <cmath>
 
 
-Genome::Genome()
+Genome::Genome(unsigned codonTableId, bool splitAA)
 {
-	//ctor
+	CodonTable::createCodonTable(codonTableId, splitAA);
 }
 
 
