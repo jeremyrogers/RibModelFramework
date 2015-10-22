@@ -8,6 +8,7 @@
 #include <cctype>
 #include <vector>
 #include <array>
+#include "CodonTable.h"
 
 
 class SequenceSummary

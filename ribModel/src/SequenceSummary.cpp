@@ -76,7 +76,8 @@ SequenceSummary& SequenceSummary::operator=(const SequenceSummary& rhs)
 
 unsigned SequenceSummary::getAACountForAA(std::string aa)
 {
-	return naa[aaToIndex.find(aa)->second];
+	CodonTable *ct = CodonTable::getInstance();
+	return naa[ct->AAToAAIndex(aa)];
 }
 
 
@@ -89,7 +90,8 @@ unsigned SequenceSummary::getAACountForAA(unsigned aaIndex)
 
 unsigned SequenceSummary::getCodonCountForCodon(std::string& codon)
 {
-	return ncodons[codonToIndex(codon)];
+	CodonTable *ct = CodonTable::getInstance();
+	return ncodons[ct->codonToIndex(codon)];
 }
 
 
@@ -102,7 +104,8 @@ unsigned SequenceSummary::getCodonCountForCodon(unsigned codonIndex)
 
 unsigned SequenceSummary::getRFPObserved(std::string codon)
 {
-	return RFPObserved[codonToIndex(codon)];
+	CodonTable *ct = CodonTable::getInstance();
+	return RFPObserved[ct->codonToIndex(codon)];
 }
 
 
@@ -120,7 +123,8 @@ void SequenceSummary::setRFPObserved(unsigned codonIndex, unsigned value)
 
 std::vector <unsigned> SequenceSummary::getCodonPositions(std::string codon)
 {
-	unsigned codonIndex = codonToIndex(codon);
+	CodonTable *ct = CodonTable::getInstance();
+	unsigned codonIndex = ct->codonToIndex(codon);
 	return getCodonPositions(codonIndex);
 }
 
@@ -159,6 +163,7 @@ bool SequenceSummary::processSequence(const std::string& sequence)
 	int aaID;
 	std::string codon;
 
+	CodonTable *ct = CodonTable::getInstance();
 	codonPositions.resize(64);
 	for (unsigned i = 0u; i < sequence.length(); i += 3)
 	{
@@ -167,10 +172,10 @@ bool SequenceSummary::processSequence(const std::string& sequence)
 		codon[1] = (char)std::toupper(codon[1]);
 		codon[2] = (char)std::toupper(codon[2]);
 
-		codonID = codonToIndex(codon);
+		codonID = ct->codonToIndex(codon);
 		if (codonID != 64) // if codon id == 64 => codon not found. Ignore, probably N 
 		{
-			aaID = codonToAAIndex(codon);
+			aaID = ct->codonToAAIndex(codon);
 			ncodons[codonID]++;
 			naa[aaID]++;
 			codonPositions[codonID].push_back(i / 3);

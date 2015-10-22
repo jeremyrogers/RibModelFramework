@@ -738,32 +738,35 @@ void ROCParameter::adaptSynthesisRateProposalWidth(unsigned adaptationWidth)
 void ROCParameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptationWidth)
 {
 	std::cout << "acceptance ratio for amino acid:\n\t";
-	for (unsigned i = 0; i < groupList.size(); i++)
+	std::vector <std::string> aaListing = ct->getAAListing();
+	for (unsigned i = 0; i < aaListing.size(); i++)
 	{
-		std::cout << groupList[i] << "\t";
+		if (aaListing[i] == "W" || aaListing[i] == "M" || aaListing[i] == "X") continue;
+		std::cout << aaListing[i] << "\t";
 	}
 	std::cout << "\n\t";
-	for (unsigned i = 0; i < groupList.size(); i++)
+	for (unsigned i = 0; i < aaListing.size(); i++)
 	{
-		std::string aa = groupList[i];
-		unsigned aaIndex = SequenceSummary::AAToAAIndex(aa);
+		if (aaListing[i] == "W" || aaListing[i] == "M" || aaListing[i] == "X") continue;
+		std::string aa = aaListing[i];
+		unsigned aaIndex = ct->AAToAAIndex(aa);
 		double acceptanceLevel = (double) numAcceptForMutationAndSelection[aaIndex] / (double) adaptationWidth;
 		std::cout << acceptanceLevel << "\t";
 		traces.updateCspAcceptanceRatioTrace(aaIndex, acceptanceLevel);
-		std::array <unsigned, 2> codonRange = SequenceSummary::AAIndexToCodonRange(aaIndex, true);
-		for (unsigned k = codonRange[0]; k < codonRange[1]; k++)
+		std::vector <unsigned> codonRange = ct->AAIndexToCodonRange(aaIndex, true);
+		for (unsigned k = 0; k < codonRange.size(); k++)
 		{
 			if (acceptanceLevel < 0.2)
 			{
 				covarianceMatrix[aaIndex] *= 0.8;
 				covarianceMatrix[aaIndex].choleskiDecomposition();
-				std_csp[k] *= 0.8;
+				std_csp[codonRange[k]] *= 0.8;
 			}
 			if (acceptanceLevel > 0.3)
 			{
 				covarianceMatrix[aaIndex] *= 1.2;
 				covarianceMatrix[aaIndex].choleskiDecomposition();
-				std_csp[k] *= 1.2;
+				std_csp[codonRange[k]] *= 1.2;
 			}
 		}
 		numAcceptForMutationAndSelection[aaIndex] = 0u;
@@ -1068,28 +1071,28 @@ void ROCParameter::proposeCodonSpecificParameter()
 	{
 		std::vector<double> iidProposed;
 		std::string aa = getGrouping(k);
-		std::array <unsigned, 2> aaRange = SequenceSummary::AAToCodonRange(aa, true);
-		unsigned numCodons = aaRange[1] - aaRange[0];
+		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+		unsigned numCodons = codonRange.size();
 		for (unsigned i = 0u; i < numCodons * (numMutationCategories + numSelectionCategories); i++)
 		{
 			iidProposed.push_back(randNorm(0.0, 1.0));
 		}
 
 		std::vector<double> covaryingNums;
-		covaryingNums = covarianceMatrix[SequenceSummary::AAToAAIndex(aa)].transformIidNumersIntoCovaryingNumbers(
+		covaryingNums = covarianceMatrix[ct->AAToAAIndex(aa)].transformIidNumersIntoCovaryingNumbers(
 				iidProposed);
 		for (unsigned i = 0; i < numMutationCategories; i++)
 		{
-			for (unsigned j = i * numCodons, l = aaRange[0]; j < (i * numCodons) + numCodons; j++, l++)
+			for (unsigned j = i * numCodons, l = 0; j < (i * numCodons) + numCodons; j++, l++)
 			{
-				proposedMutationParameter[i][l] = currentMutationParameter[i][l] + covaryingNums[j];
+				proposedMutationParameter[i][codonRange[l]] = currentMutationParameter[i][codonRange[l]] + covaryingNums[j];
 			}
 		}
 		for (unsigned i = 0; i < numSelectionCategories; i++)
 		{
-			for (unsigned j = i * numCodons, l = aaRange[0]; j < (i * numCodons) + numCodons; j++, l++)
+			for (unsigned j = i * numCodons, l = 0; j < (i * numCodons) + numCodons; j++, l++)
 			{
-				proposedSelectionParameter[i][l] = currentSelectionParameter[i][l]
+				proposedSelectionParameter[i][codonRange[l]] = currentSelectionParameter[i][codonRange[l]]
 						+ covaryingNums[(numMutationCategories * numCodons) + j];
 			}
 		}
@@ -1118,22 +1121,22 @@ std::vector<double> ROCParameter::propose(std::vector<double> currentParam, doub
 
 void ROCParameter::updateCodonSpecificParameter(std::string grouping)
 {
-	std::array <unsigned, 2> aaRange = SequenceSummary::AAToCodonRange(grouping, true);
-	unsigned aaIndex = SequenceSummary::aaToIndex.find(grouping)->second;
+	std::vector <unsigned> codonRange = ct->AAToCodonRange(grouping, true);
+	unsigned aaIndex = ct->AAToAAIndex(grouping);
 	numAcceptForMutationAndSelection[aaIndex]++;
 
 	for (unsigned k = 0u; k < numMutationCategories; k++)
 	{
-		for (unsigned i = aaRange[0]; i < aaRange[1]; i++)
+		for (unsigned i = 0; i < codonRange.size(); i++)
 		{
-			currentMutationParameter[k][i] = proposedMutationParameter[k][i];
+			currentMutationParameter[k][codonRange[i]] = proposedMutationParameter[k][codonRange[i]];
 		}
 	}
 	for (unsigned k = 0u; k < numSelectionCategories; k++)
 	{
-		for (unsigned i = aaRange[0]; i < aaRange[1]; i++)
+		for (unsigned i = 0; i < codonRange.size(); i++)
 		{
-			currentSelectionParameter[k][i] = proposedSelectionParameter[k][i];
+			currentSelectionParameter[k][codonRange[i]] = proposedSelectionParameter[k][codonRange[i]];
 		}
 	}
 }
