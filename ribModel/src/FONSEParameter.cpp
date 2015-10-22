@@ -146,10 +146,12 @@ void FONSEParameter::initFONSEParameterSet()
 		currentSelectionParameter[i] = tmp;
 	}
 
-	for (unsigned i = 0; i < maxGrouping; i++)
+	/* BUG: Max Grouping correct here? */
+	std::vector <std::string> groupings = ct->getAAListing();
+	for (unsigned i = 0; i < groupings.size(); i++)
 	{
-		std::string aa = SequenceSummary::AminoAcidArray[i];
-		unsigned numCodons = SequenceSummary::GetNumCodonsForAA(aa, true);
+		std::string aa = groupings.at(i);
+		unsigned numCodons = ct->getNumCodonsForAA(aa, true);
 		CovarianceMatrix m((numMutationCategories + numSelectionCategories) * numCodons);
 		m.choleskiDecomposition();
 		covarianceMatrix.push_back(m);
@@ -162,18 +164,19 @@ std::vector <std::vector <double> > FONSEParameter::calculateSelectionCoefficien
 	unsigned numGenes = mixtureAssignment.size();
 	std::vector<std::vector<double>> selectionCoefficients;
 	selectionCoefficients.resize(numGenes);
+	std::vector <std::string> codonListingWithoutReference = ct->getForParamVectorListing();
 	for (unsigned i = 0; i < numGenes; i++)
 	{
 		for (unsigned j = 0; j < getGroupListSize(); j++)
 		{
 
 			std::string aa = getGrouping(j);
-			std::array <unsigned, 2> aaRange = SequenceSummary::AAToCodonRange(aa, true);
+			std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
 			std::vector<double> tmp;
 			double minValue = 0.0;
-			for (unsigned k = aaRange[0]; k < aaRange[1]; k++)
+			for (unsigned k = 0; k < codonRange.size(); k++)
 			{
-				std::string codon = SequenceSummary::codonArrayParameter[k];
+				std::string codon = codonListingWithoutReference[codonRange[k]];
 				tmp.push_back(getSelectionPosteriorMean(sample, mixture, codon));
 				if (tmp[k] < minValue)
 				{
@@ -422,7 +425,7 @@ void FONSEParameter::initCovarianceMatrix(SEXP _matrix, std::string aa)
 CovarianceMatrix& FONSEParameter::getCovarianceMatrixForAA(std::string aa)
 {
 	aa[0] = (char)std::toupper(aa[0]);
-	unsigned aaIndex = SequenceSummary::aaToIndex.find(aa)->second;
+	unsigned aaIndex = ct->AAToAAIndex(aa);
 	return covarianceMatrix[aaIndex];
 }
 
@@ -438,10 +441,10 @@ void FONSEParameter::initSelection(std::vector<double> selectionValues, unsigned
 		int category = getSelectionCategory(mixtureElement);
 
 		aa[0] = (char)std::toupper(aa[0]);
-		std::array <unsigned, 2> aaRange = SequenceSummary::AAToCodonRange(aa, true);
-		for (unsigned i = aaRange[0], j = 0; i < aaRange[1]; i++, j++)
+		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+		for (unsigned i = 0; i < codonRange.size(); i++)
 		{
-			currentSelectionParameter[category][i] = selectionValues[j];
+			currentSelectionParameter[category][codonRange[i]] = selectionValues[i];
 		}
 	}
 }
@@ -458,10 +461,10 @@ void FONSEParameter::initMutation(std::vector<double> mutationValues, unsigned m
 
 		unsigned category = getMutationCategory(mixtureElement);
 		aa[0] = (char)std::toupper(aa[0]);
-		std::array <unsigned, 2> aaRange = SequenceSummary::AAToCodonRange(aa, true);
-		for (unsigned i = aaRange[0], j = 0; i < aaRange[1]; i++, j++)
+		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+		for (unsigned i = 0; i < codonRange.size(); i++)
 		{
-			currentMutationParameter[category][i] = mutationValues[j];
+			currentMutationParameter[category][codonRange[i]] = mutationValues[i];
 		}
 	}
 }
@@ -551,18 +554,17 @@ void FONSEParameter::getParameterForCategory(unsigned category, unsigned paramTy
 		std::cerr << "\tReturning mutation parameter! \n";
 		tempSet = (proposal ? &proposedMutationParameter[category] : &currentMutationParameter[category]);
 	}
-	std::array <unsigned, 2> aaRange = SequenceSummary::AAToCodonRange(aa, true);
+	std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
 
-	unsigned j = 0u;
-	for (unsigned i = aaRange[0]; i < aaRange[1]; i++, j++)
+	for (unsigned i = 0; i < codonRange.size(); i++)
 	{
-		returnSet[j] = tempSet->at(i);
+		returnSet[i] = tempSet->at(codonRange[i]);
 	}
 }
 
 double FONSEParameter::getCurrentCodonSpecificProposalWidth(unsigned aa)
 {
-	std::array<unsigned , 2> codonRange = SequenceSummary::AAIndexToCodonRange(aa, true);
+	std::vector <unsigned> codonRange = ct->AAIndexToCodonRange(aa, true);
 	return std_csp[codonRange[0]];
 }
 
@@ -619,11 +621,14 @@ void FONSEParameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptatio
 {
 	unsigned numCSPsets = numAcceptForMutationAndSelection.size();
 	std::cout << "acceptance ratio for amino acid:\n\t";
+	std::vector <std::string> aaListing = ct->getAAListing();
 	for (unsigned i = 0; i < numCSPsets; i++)
 	{
+		// TODO: fix for groupList
+		// BUG: indices might differ now
 		if (i == 21 || i == 10 || i == 18)
 			continue;
-		std::cout << SequenceSummary::AminoAcidArray[i] << "\t\t";
+		std::cout << aaListing[i] << "\t\t";
 	}
 	std::cout << "\n\t";
 	for (unsigned i = 0; i < numCSPsets; i++)
@@ -633,20 +638,20 @@ void FONSEParameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptatio
 		double acceptanceLevel = (double)numAcceptForMutationAndSelection[i] / (double)adaptationWidth;
 		std::cout << acceptanceLevel << "\t";
 		traces.updateCspAcceptanceRatioTrace(i, acceptanceLevel);
-		std::array <unsigned, 2> codonRange = SequenceSummary::AAIndexToCodonRange(i, true);
-		for (unsigned k = codonRange[0]; k < codonRange[1]; k++)
+		std::vector <unsigned> codonRange = ct->AAIndexToCodonRange(i, true);
+		for (unsigned k = 0; k < codonRange.size(); k++)
 		{
 			if (acceptanceLevel < 0.2)
 			{
 				covarianceMatrix[i] *= 0.8;
 				covarianceMatrix[i].choleskiDecomposition();
-				std_csp[k] *= 0.8;
+				std_csp[codonRange[k]] *= 0.8;
 			}
 			if (acceptanceLevel > 0.3)
 			{
 				covarianceMatrix[i] *= 1.2;
 				covarianceMatrix[i].choleskiDecomposition();
-				std_csp[k] *= 1.2;
+				std_csp[codonRange[k]] *= 1.2;
 			}
 		}
 		numAcceptForMutationAndSelection[i] = 0u;
@@ -903,28 +908,28 @@ void FONSEParameter::proposeCodonSpecificParameter()
 	{
 		std::vector<double> iidProposed;
 		std::string aa = getGrouping(k);
-		std::array <unsigned, 2> aaRange = SequenceSummary::AAToCodonRange(aa, true);
-		unsigned numCodons = aaRange[1] - aaRange[0];
+		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+		unsigned numCodons = codonRange.size();
 		for (unsigned i = 0u; i < numCodons * (numMutationCategories + numSelectionCategories); i++)
 		{
 			iidProposed.push_back(randNorm(0.0, 1.0));
 		}
 
 		std::vector<double> covaryingNums;
-		covaryingNums = covarianceMatrix[SequenceSummary::AAToAAIndex(aa)].transformIidNumersIntoCovaryingNumbers(
+		covaryingNums = covarianceMatrix[ct->AAToAAIndex(aa)].transformIidNumersIntoCovaryingNumbers(
 			iidProposed);
 		for (unsigned i = 0; i < numMutationCategories; i++)
 		{
-			for (unsigned j = i * numCodons, l = aaRange[0]; j < (i * numCodons) + numCodons; j++, l++)
+			for (unsigned j = i * numCodons, l = 0; j < (i * numCodons) + numCodons; j++, l++)
 			{
-				proposedMutationParameter[i][l] = currentMutationParameter[i][l] + covaryingNums[j];
+				proposedMutationParameter[i][codonRange[l]] = currentMutationParameter[i][codonRange[l]] + covaryingNums[j];
 			}
 		}
 		for (unsigned i = 0; i < numSelectionCategories; i++)
 		{
-			for (unsigned j = i * numCodons, l = aaRange[0]; j < (i * numCodons) + numCodons; j++, l++)
+			for (unsigned j = i * numCodons, l = 0; j < (i * numCodons) + numCodons; j++, l++)
 			{
-				proposedSelectionParameter[i][l] = currentSelectionParameter[i][l]
+				proposedSelectionParameter[i][codonRange[l]] = currentSelectionParameter[i][codonRange[l]]
 					+ covaryingNums[(numMutationCategories * numCodons) + j];
 			}
 		}
@@ -939,22 +944,23 @@ void FONSEParameter::proposeHyperParameters()
 
 void FONSEParameter::updateCodonSpecificParameter(std::string grouping)
 {
-	std::array <unsigned, 2> aaRange = SequenceSummary::AAToCodonRange(grouping, true);
-	unsigned aaIndex = SequenceSummary::aaToIndex.find(grouping)->second;
+	std::vector <unsigned> codonRange = ct->AAToCodonRange(grouping, true);
+//possible confusion of functions below
+	unsigned aaIndex = ct->AAToAAIndex(grouping);
 	numAcceptForMutationAndSelection[aaIndex]++;
 
 	for (unsigned k = 0u; k < numMutationCategories; k++)
 	{
-		for (unsigned i = aaRange[0]; i < aaRange[1]; i++)
+		for (unsigned i = 0; i < codonRange.size(); i++)
 		{
-			currentMutationParameter[k][i] = proposedMutationParameter[k][i];
+			currentMutationParameter[k][codonRange[i]] = proposedMutationParameter[k][codonRange[i]];
 		}
 	}
 	for (unsigned k = 0u; k < numSelectionCategories; k++)
 	{
-		for (unsigned i = aaRange[0]; i < aaRange[1]; i++)
+		for (unsigned i = 0; i < codonRange.size(); i++)
 		{
-			currentSelectionParameter[k][i] = proposedSelectionParameter[k][i];
+			currentSelectionParameter[k][codonRange[i]] = proposedSelectionParameter[k][codonRange[i]];
 		}
 	}
 }

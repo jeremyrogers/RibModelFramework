@@ -194,30 +194,6 @@ void testInitFromRestartFile()
 
 }
 
-void testReadRFPFile()
-{
-	std::cout << "------------------- TEST READRFPFILE ----------------------" << "\n";
-	Genome genome;
-
-	genome.readRFPFile("/Users/roxasoath1/Desktop/RibModelFramework/ribModel/data/rfp.counts.by.codon.and.gene.GSE63789.wt.csv");
-	std::string codon = "ATG";	
-	std::cout << SequenceSummary::codonToIndex(codon) <<"\n";
-	for (unsigned i = 0; i < genome.getGenomeSize(); i++)
-	{
-		std::cout << "Working with gene " << i << "\n";
-		Gene gene = genome.getGene(i);
-		SequenceSummary SS = gene.geneData;
-		for (unsigned j = 0; j < 64; j++)
-		{
-			//std::cout << gene.getId() << " " << SS.getRFPObserved(j) << " " << SS.getNumCodonsInMRNA(j) << " " << SS.IndexToCodon(j) << "\n";
-			std::cout << gene.getId() << " " << SS.getRFPObserved(j) << " " << SS.indexToCodon(j) << "\n";
-		}
-	}
-	std::cout << "------------------- TEST READRFPFILE ----------------------" << "\n";
-}
-
-
-
 void testReadObservedPhis()
 {
 	Genome genome;
@@ -432,7 +408,7 @@ int main()
 	ModelToRun modelToRun = ROC;
 	bool read = false;
 	bool testing = false;
-	bool withPhi = true;
+	bool withPhi = false;
 	if (testing)
 	{
 		//testLogNormDensity();
@@ -470,7 +446,8 @@ int main()
 		
 
 		std::cout << "initialize Genome object" << std::endl;
-		Genome genome;
+		Genome genome(1, true);
+		CodonTable *ct = CodonTable::getInstance();
 		switch (user) {
 			case cedric:
 				if (modelToRun == ROC)
@@ -610,18 +587,19 @@ int main()
 			
 
 			std::cout << "starting MCMC for ROC" << std::endl;
-			mcmc.run(genome, model, 1, 20);
+			mcmc.run(genome, model, 1, 0);
 			std::cout << std::endl << "Finished MCMC for ROC" << std::endl;
 			
 
 			std::cout << "Sphi posterior estimate: " << parameter.getSphiPosteriorMean(useSamples) << std::endl;
 			std::cout << "Sphi proposal width: " << parameter.getCurrentSphiProposalWidth() << std::endl;
 			std::cout << "CSP proposal width: \n";
+			std::vector <std::string> aaListing = ct->getAAListing();
 			for (unsigned n = 0; n < model.getGroupListSize(); n++)
 			{
 				std::string aa = model.getGrouping(n);
-				index = SequenceSummary::AAToAAIndex(aa);
-				std::cout << SequenceSummary::AminoAcidArray[index] << ": " << parameter.getCurrentCodonSpecificProposalWidth(index) << "\n";
+				index = ct->AAToAAIndex(aa);
+				std::cout << aaListing[index] << ": " << parameter.getCurrentCodonSpecificProposalWidth(index) << "\n";
 			}
 		}
 		else if (modelToRun == RFP)
@@ -737,11 +715,12 @@ int main()
 			std::cout << "Sphi posterior estimate: " << parameter.getSphiPosteriorMean(useSamples) << std::endl;
 			std::cout << "Sphi proposal width: " << parameter.getCurrentSphiProposalWidth() << std::endl;
 			std::cout << "CSP proposal width: \n";
+			std::vector <std::string> aaListing = ct->getAAListing();
 			for (unsigned n = 0; n < model.getGroupListSize(); n++)
 			{
 				std::string aa = model.getGrouping(n);
-				index = SequenceSummary::AAToAAIndex(aa);
-				std::cout << SequenceSummary::AminoAcidArray[index] << ": " << parameter.getCurrentCodonSpecificProposalWidth(index) << "\n";
+				index = ct->AAToAAIndex(aa);
+				std::cout << aaListing[index] << ": " << parameter.getCurrentCodonSpecificProposalWidth(index) << "\n";
 			}
 		}
 

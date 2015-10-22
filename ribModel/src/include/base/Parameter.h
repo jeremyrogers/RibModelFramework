@@ -13,6 +13,7 @@
 #endif
 
 #include "../Genome.h"
+#include "../CodonTable.h"
 #include "../CovarianceMatrix.h"
 #include "Trace.h"
 
@@ -270,6 +271,7 @@ class Parameter {
 		unsigned numMutationCategories; //TODO Probably needs to be renamed
 		unsigned numSelectionCategories; //TODO Probably needs to be renamed
 
+		CodonTable *ct;
 		//Objects
 		std::vector<mixtureDefinition> categories;
 

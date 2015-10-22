@@ -29,18 +29,22 @@ void ROCModel::calculateLogLikelihoodRatioPerGene(Gene& gene, unsigned geneIndex
 	double mutation[5];
 	double selection[5];
 	int codonCount[6];
+	CodonTable *ct = CodonTable::getInstance();
+	std::vector <std::string> aaListing = ct->getAAListing();
 #ifndef __APPLE__
 #pragma omp parallel for private(mutation, selection, codonCount) reduction(+:logLikelihood,logLikelihood_proposed)
 #endif
-	for(int i = 0; i < getGroupListSize(); i++)
+
+	for(int i = 0; i < aaListing.size(); i++)
 	{
-		std::string curAA = getGrouping(i);
+		std::string curAA = aaListing[i];
+		if (curAA == "M" || curAA == "X" || curAA == "W") continue;
 
 		// skip amino acids which do not occur in current gene. Avoid useless calculations and multiplying by 0
 		if(seqsum.getAACountForAA(curAA) == 0) continue;
 
 		// get codon count (total count not parameter->count)
-		unsigned numCodons = seqsum.GetNumCodonsForAA(curAA);
+		unsigned numCodons = ct->getNumCodonsForAA(curAA);
 		// get mutation and selection parameter->for gene
 		//double* mutation = new double[numCodons - 1]();
 		parameter->getParameterForCategory(mutationCategory, ROCParameter::dM, curAA, false, mutation);
@@ -144,8 +148,9 @@ double ROCModel::calculateLogLikelihoodPerAAPerGene(unsigned numCodons, int codo
 
 void ROCModel::calculateLogLikelihoodRatioPerGroupingPerCategory(std::string grouping, Genome& genome, double& logAcceptanceRatioForAllMixtures)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	int numGenes = genome.getGenomeSize();
-	int numCodons = SequenceSummary::GetNumCodonsForAA(grouping);
+	int numCodons = ct->getNumCodonsForAA(grouping);
 	double likelihood = 0.0;
 	double likelihood_proposed = 0.0;
 
@@ -196,7 +201,8 @@ void ROCModel::calculateLogLikelihoodRatioPerGroupingPerCategory(std::string gro
 
 void ROCModel::obtainCodonCount(SequenceSummary& seqsum, std::string curAA, int codonCount[])
 {
-	std::array <unsigned, 2> codonRange = SequenceSummary::AAToCodonRange(curAA);
+	CodonTable *ct = CodonTable::getInstance();
+	std::vector <unsigned> codonRange = ct->AAToCodonRange(curAA);
 	// get codon counts for AA
 	unsigned j = 0u;
 	for(unsigned i = codonRange[0]; i < codonRange[1]; i++, j++)
@@ -252,6 +258,7 @@ void ROCModel::printHyperParameters()
 
 void ROCModel::simulateGenome(Genome &genome)
 {
+	CodonTable *ct = CodonTable::getInstance();
      unsigned codonIndex;
      std::string curAA;
 
@@ -275,11 +282,11 @@ void ROCModel::simulateGenome(Genome &genome)
 		for (unsigned position = 1; position < (geneSeq.size() / 3); position++)
 	 	{
 	 		std::string codon = geneSeq.substr((position * 3), 3);
-			std::string aa = SequenceSummary::codonToAA(codon);
+			std::string aa = ct->codonToAA(codon);
 
 			if (aa == "X") continue;
 
-			unsigned numCodons = SequenceSummary::GetNumCodonsForAA(aa);
+			unsigned numCodons = ct->getNumCodonsForAA(aa);
 
 			double* codonProb = new double[numCodons](); //size the arrays to the proper size based on # of codons.
 			double* mutation = new double[numCodons - 1]();
@@ -298,12 +305,14 @@ void ROCModel::simulateGenome(Genome &genome)
 			}
 
 
+			// TODO: potentially put this into a function
 			codonIndex = Parameter::randMultinom(codonProb, numCodons);
-			std::array <unsigned, 2> aaRange = SequenceSummary::AAToCodonRange(curAA); //need the first spot in the array where the codons for curAA are
-			codon = seqSum.indexToCodon(aaRange[0] + codonIndex);//get the correct codon based off codonIndex
+			std::vector <unsigned> codonRange = ct->AAToCodonRange(curAA); //need the first spot in the array where the codons for curAA are
+			codon = ct->indexToCodon(codonRange[codonIndex]);//get the correct codon based off codonIndex
 			tmpSeq += codon;
 	 	}
-		std::string codon =	seqSum.indexToCodon((unsigned)((rand() % 3) + 61)); //randomly choose a stop codon, from range 61-63
+		// TODO: BUG: this won't work
+		std::string codon =	ct->indexToCodon((unsigned)((rand() % 3) + 61)); //randomly choose a stop codon, from range 61-63
 		tmpSeq += codon;
 		Gene simulatedGene(tmpSeq, tmpDesc, gene.getId());
 		genome.addGene(simulatedGene, true);

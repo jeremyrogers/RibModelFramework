@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <cctype>
+#include "../CodonTable.h"
 #include "../base/Trace.h"
 
 class FONSETrace : public Trace

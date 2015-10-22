@@ -48,7 +48,7 @@ Parameter& Parameter::operator=(const Parameter& rhs)
 {
   if (this == &rhs) return *this; // handle self assignment
   numParam = rhs.numParam;
-
+  ct = rhs.ct;
 
   Sphi = rhs.Sphi;
   Sphi_proposed = rhs.Sphi_proposed;
@@ -104,6 +104,7 @@ void Parameter::initParameterSet(double sphi, unsigned _numMixtures, std::vector
 	}
 #endif
 
+	ct = CodonTable::getInstance();
 	mutationSelectionState = _mutationSelectionState;
 	numParam = ((splitSer) ? 40 : 41);
 	numMixtures = _numMixtures;
@@ -798,13 +799,16 @@ unsigned Parameter::getEstimatedMixtureAssignment(unsigned samples, unsigned gen
 // http://www.tandfonline.com/doi/pdf/10.1080/03081070500502967
 double Parameter::calculateSCUO(Gene& gene, unsigned maxAA)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	SequenceSummary seqsum = gene.getSequenceSummary();
+	std::vector <std::string> aaListing = ct->getAAListing();
 
 	double totalDegenerateAACount = 0.0;
 	for(unsigned i = 0; i < maxAA; i++)
 	{
-		std::string curAA = seqsum.AminoAcidArray[i];
+		std::string curAA = aaListing[i];
 		// skip amino acids with only one codon or stop codons
+		// TODO: fix this for groupList
 		if(curAA == "X" || curAA == "M" || curAA == "W") continue;
 		totalDegenerateAACount += (double)seqsum.getAACountForAA(i);
 	}
@@ -812,23 +816,21 @@ double Parameter::calculateSCUO(Gene& gene, unsigned maxAA)
 	double scuoValue = 0.0;
 	for(unsigned i = 0; i < maxAA; i++)
 	{
-		std::string curAA = seqsum.AminoAcidArray[i];
+		std::string curAA = aaListing[i];
 		// skip amino acids with only one codon or stop codons
 		if(curAA == "X" || curAA == "M" || curAA == "W") continue;
-		double numDegenerateCodons = SequenceSummary::GetNumCodonsForAA(curAA);
+		unsigned numDegenerateCodons = ct->getNumCodonsForAA(curAA);
 
 		double aaCount = (double)seqsum.getAACountForAA(i);
 		if(aaCount == 0) continue;
 
-		std::array<unsigned, 2> codonRange = SequenceSummary::AAIndexToCodonRange(i, false);
+		std::vector <unsigned> codonRange = ct->AAIndexToCodonRange(i, false);
 
 		// calculate -sum(pij log(pij))
 		double aaEntropy = 0.0;
-		unsigned start = codonRange[0];
-		unsigned endd = codonRange[1];
-		for(unsigned k = start; k < endd; k++)
+		for(unsigned k = 0; k < codonRange.size(); k++)
 		{
-			int currCodonCount = seqsum.getCodonCountForCodon(k);
+			int currCodonCount = seqsum.getCodonCountForCodon(codonRange[k]);
 			if(currCodonCount == 0) continue;
 			double codonProportion = (double)currCodonCount / aaCount;
 			aaEntropy += codonProportion*std::log(codonProportion);

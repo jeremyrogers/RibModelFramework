@@ -169,12 +169,12 @@ Gene Gene::reverseComplement()
 
 std::string Gene::toAASequence()
 {
-
+	CodonTable *ct = CodonTable::getInstance();
     std::string aaseq = "";
     for(unsigned i = 0; i < seq.length(); i+=3)
     {
         std::string codon = seq.substr(i, 3);
-        aaseq += SequenceSummary::codonToAA(codon);
+        aaseq += ct->codonToAA(codon);
     }
     return aaseq;
 }
