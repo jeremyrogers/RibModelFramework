@@ -471,7 +471,6 @@ void RFPParameter::proposeHyperParameters()
 
 void RFPParameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptationWidth)
 {
-
 	std::cout << "acceptance ratio for codon:\n";
 	for (unsigned i = 0; i < groupList.size(); i++)
 	{

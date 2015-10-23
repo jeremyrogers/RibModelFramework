@@ -18,6 +18,7 @@ FONSEModel::~FONSEModel()
 
 void FONSEModel::calculateLogLikelihoodRatioPerGene(Gene& gene, unsigned geneIndex, unsigned k, double* logProbabilityRatio)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	double likelihood = 0.0;
 	double likelihood_proposed = 0.0;
 	std::string curAA;
@@ -35,12 +36,14 @@ void FONSEModel::calculateLogLikelihoodRatioPerGene(Gene& gene, unsigned geneInd
 	double phiValue = parameter->getSynthesisRate(geneIndex, expressionCategory, false);
 	double phiValue_proposed = parameter->getSynthesisRate(geneIndex, expressionCategory, true);
 
+	std::vector <std::string> aaListing = ct->getAAListing();
 #ifndef __APPLE__
 #pragma omp parallel for private(mutation, selection, positions, curAA) reduction(+:likelihood,likelihood_proposed)
 #endif
-	for (int i = 0; i < getGroupListSize(); i++)
+	for (int i = 0; i < aaListing.size(); i++)
 	{
-		curAA = getGrouping(i);
+		curAA = aaListing[i];
+		if (curAA == "W" || curAA == "M" || curAA == "X") continue;
 
 		parameter->getParameterForCategory(mutationCategory, FONSEParameter::dM, curAA, false, mutation);
 		parameter->getParameterForCategory(selectionCategory, FONSEParameter::dOmega, curAA, false, selection);

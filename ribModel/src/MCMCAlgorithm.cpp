@@ -224,12 +224,14 @@ void MCMCAlgorithm::acceptRejectHyperParameter(Genome &genome, Model& model, int
 
 void MCMCAlgorithm::acceptRejectCodonSpecificParameter(Genome& genome, Model& model, int iteration)
 {
+	CodonTable *ct = CodonTable::getInstance();
+	std::vector <std::string> aaListing = ct->getAAListing();
 	double acceptanceRatioForAllMixtures = 0.0;
-	unsigned size = model.getGroupListSize();
 
-	for(unsigned i = 0; i < size; i++)
+	for(unsigned i = 0; i < aaListing.size(); i++)
 	{
-		std::string grouping = model.getGrouping(i);
+		std::string grouping = aaListing[i];
+		if (grouping == "M" || grouping == "W" || grouping == "X") continue;
 
 		// calculate likelihood ratio for every Category for current AA
 		model.calculateLogLikelihoodRatioPerGroupingPerCategory(grouping, genome, acceptanceRatioForAllMixtures);
@@ -258,6 +260,8 @@ void MCMCAlgorithm::varyInitialConditions(Genome& genome, Model& model, unsigned
 	std::cout << "Allowing divergence from initial conditions for " << divergenceIterations << " iterations.\n" << std::endl;
 	// divergence from initial conditions is not stored in trace
 
+	CodonTable *ct = CodonTable::getInstance();
+	std::vector <std::string> aaListing = ct->getAAListing();
 	// how many steps do you want to walk "away" from the initial conditions
 	for(unsigned iteration = 0u; iteration < divergenceIterations; iteration++)
 	{
@@ -267,10 +271,10 @@ void MCMCAlgorithm::varyInitialConditions(Genome& genome, Model& model, unsigned
 		model.proposeSynthesisRateLevels();
 
 		// no prior on codon specific parameters -> just accept everything
-		unsigned size = model.getGroupListSize();
-		for(unsigned i = 0; i < size; i++)
+		for(unsigned i = 0; i < aaListing.size(); i++)
 		{
-			std::string grouping = model.getGrouping(i);
+			std::string grouping = aaListing[i];
+			if (grouping == "M" || grouping == "W" || grouping == "X") continue;
 			model.updateCodonSpecificParameter(grouping);
 		}
 

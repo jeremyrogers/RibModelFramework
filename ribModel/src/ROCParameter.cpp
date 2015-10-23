@@ -1066,11 +1066,12 @@ double ROCParameter::getMutationVariance(unsigned mixtureElement, unsigned sampl
 // 4. the adjusment of the likelihood by the jacobian that arises from this transformation is cheap and by grouping everything in one class it takes place more or less at the same place
 void ROCParameter::proposeCodonSpecificParameter()
 {
-
-	for (unsigned k = 0; k < getGroupListSize(); k++)
+	std::vector <std::string> aaListing = ct->getAAListing();
+	for (unsigned k = 0; k < aaListing.size(); k++)
 	{
 		std::vector<double> iidProposed;
-		std::string aa = getGrouping(k);
+		std::string aa = aaListing[k];
+		if (aa == "X" || aa == "W" || aa == "M") continue;
 		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
 		unsigned numCodons = codonRange.size();
 		for (unsigned i = 0u; i < numCodons * (numMutationCategories + numSelectionCategories); i++)

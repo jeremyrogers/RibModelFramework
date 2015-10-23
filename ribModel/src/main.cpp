@@ -595,9 +595,10 @@ int main()
 			std::cout << "Sphi proposal width: " << parameter.getCurrentSphiProposalWidth() << std::endl;
 			std::cout << "CSP proposal width: \n";
 			std::vector <std::string> aaListing = ct->getAAListing();
-			for (unsigned n = 0; n < model.getGroupListSize(); n++)
+			for (unsigned n = 0; n < aaListing.size(); n++)
 			{
-				std::string aa = model.getGrouping(n);
+				std::string aa = aaListing[n];
+				if (aa == "M" || aa == "X" || aa == "W") continue;
 				index = ct->AAToAAIndex(aa);
 				std::cout << aaListing[index] << ": " << parameter.getCurrentCodonSpecificProposalWidth(index) << "\n";
 			}
@@ -716,9 +717,10 @@ int main()
 			std::cout << "Sphi proposal width: " << parameter.getCurrentSphiProposalWidth() << std::endl;
 			std::cout << "CSP proposal width: \n";
 			std::vector <std::string> aaListing = ct->getAAListing();
-			for (unsigned n = 0; n < model.getGroupListSize(); n++)
+			for (unsigned n = 0; n < aaListing.size(); n++)
 			{
-				std::string aa = model.getGrouping(n);
+				std::string aa = aaListing[n];
+				if (aa == "W" || aa == "M" || aa == "X") continue;
 				index = ct->AAToAAIndex(aa);
 				std::cout << aaListing[index] << ": " << parameter.getCurrentCodonSpecificProposalWidth(index) << "\n";
 			}

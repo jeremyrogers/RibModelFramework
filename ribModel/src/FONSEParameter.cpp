@@ -165,12 +165,13 @@ std::vector <std::vector <double> > FONSEParameter::calculateSelectionCoefficien
 	std::vector<std::vector<double>> selectionCoefficients;
 	selectionCoefficients.resize(numGenes);
 	std::vector <std::string> codonListingWithoutReference = ct->getForParamVectorListing();
+	std::vector <std::string> aaListing = ct->getAAListing();
 	for (unsigned i = 0; i < numGenes; i++)
 	{
-		for (unsigned j = 0; j < getGroupListSize(); j++)
+		for (unsigned j = 0; j < aaListing.size(); j++)
 		{
-
-			std::string aa = getGrouping(j);
+			std::string aa = aaListing[j];
+			if (aa == "W" || aa == "M" || aa == "X") continue;
 			std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
 			std::vector<double> tmp;
 			double minValue = 0.0;
@@ -904,10 +905,12 @@ double FONSEParameter::getMutationVariance(unsigned mixtureElement, unsigned sam
 
 void FONSEParameter::proposeCodonSpecificParameter()
 {
-	for (unsigned k = 0; k < getGroupListSize(); k++)
+	std::vector <std::string> aaListing = ct->getAAListing();
+	for (unsigned k = 0; k < aaListing.size(); k++)
 	{
 		std::vector<double> iidProposed;
-		std::string aa = getGrouping(k);
+		std::string aa = aaListing[k];
+		if (aa == "M" || aa == "W" || aa == "X") continue;
 		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
 		unsigned numCodons = codonRange.size();
 		for (unsigned i = 0u; i < numCodons * (numMutationCategories + numSelectionCategories); i++)
