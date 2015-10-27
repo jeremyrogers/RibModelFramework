@@ -140,8 +140,8 @@ void ROCParameter::initROCParameterSet()
   for (unsigned i = 0; i < aaListing.size(); i++)
   {
     std::string aa = ct->indexToAA(i);
-	// BUG: oh god
-	if (aa == "M" || aa == "X" || aa == "W") continue;
+	// BUG: OH GOD
+	//if (aa == "M" || aa == "X" || aa == "W") continue;
     unsigned numCodons = ct->getNumCodonsForAA(aa, true);
     CovarianceMatrix m((numMutationCategories + numSelectionCategories) * numCodons);
     m.choleskiDecomposition();
@@ -1071,7 +1071,7 @@ void ROCParameter::proposeCodonSpecificParameter()
 	{
 		std::vector<double> iidProposed;
 		std::string aa = aaListing[k];
-		if (aa == "X" || aa == "W" || aa == "M") continue;
+		//if (aa == "X" || aa == "W" || aa == "M") continue;
 		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
 		unsigned numCodons = codonRange.size();
 		for (unsigned i = 0u; i < numCodons * (numMutationCategories + numSelectionCategories); i++)
