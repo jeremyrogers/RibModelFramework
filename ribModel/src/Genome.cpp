@@ -6,10 +6,11 @@
 #include <sstream>
 #include <cmath>
 
+std::vector <std::string> Genome::defaultVector;
 
-Genome::Genome(unsigned codonTableId, bool splitAA)
+Genome::Genome(unsigned codonTableId, std::string model, bool splitAA, std::vector <std::string> groupList)
 {
-	CodonTable::createCodonTable(codonTableId, splitAA);
+	CodonTable::createCodonTable(codonTableId, model, splitAA, groupList);
 }
 
 

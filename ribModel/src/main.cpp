@@ -446,7 +446,7 @@ int main()
 		
 
 		std::cout << "initialize Genome object" << std::endl;
-		Genome genome(1, true);
+		Genome genome(1, "ROC", true);
 		CodonTable *ct = CodonTable::getInstance();
 		switch (user) {
 			case cedric:
@@ -594,7 +594,7 @@ int main()
 			std::cout << "Sphi posterior estimate: " << parameter.getSphiPosteriorMean(useSamples) << std::endl;
 			std::cout << "Sphi proposal width: " << parameter.getCurrentSphiProposalWidth() << std::endl;
 			std::cout << "CSP proposal width: \n";
-			std::vector <std::string> aaListing = ct->getAAListing();
+			std::vector <std::string> aaListing = ct->getGroupList();
 			for (unsigned n = 0; n < aaListing.size(); n++)
 			{
 				std::string aa = aaListing[n];
@@ -716,7 +716,7 @@ int main()
 			std::cout << "Sphi posterior estimate: " << parameter.getSphiPosteriorMean(useSamples) << std::endl;
 			std::cout << "Sphi proposal width: " << parameter.getCurrentSphiProposalWidth() << std::endl;
 			std::cout << "CSP proposal width: \n";
-			std::vector <std::string> aaListing = ct->getAAListing();
+			std::vector <std::string> aaListing = ct->getGroupList();
 			for (unsigned n = 0; n < aaListing.size(); n++)
 			{
 				std::string aa = aaListing[n];

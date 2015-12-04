@@ -30,7 +30,7 @@ void ROCModel::calculateLogLikelihoodRatioPerGene(Gene& gene, unsigned geneIndex
 	double selection[5];
 	int codonCount[6];
 	CodonTable *ct = CodonTable::getInstance();
-	std::vector <std::string> aaListing = ct->getAAListing();
+	std::vector <std::string> aaListing = ct->getGroupList();
 #ifndef __APPLE__
 #pragma omp parallel for private(mutation, selection, codonCount) reduction(+:logLikelihood,logLikelihood_proposed)
 #endif

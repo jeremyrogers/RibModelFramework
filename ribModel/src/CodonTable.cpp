@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+std::vector <std::string> CodonTable::defaultVector;
 
 //----------------------------------------------//
 //----------Constructors & Destructors----------//
@@ -13,14 +14,42 @@ CodonTable::CodonTable()
 }
 
 
-CodonTable::CodonTable(unsigned _tableId, bool _splitAA) : tableId(_tableId), splitAA(_splitAA)
+CodonTable::CodonTable(unsigned _tableId, std::string model, bool _splitAA, std::vector <std::string> _groupList) : tableId(_tableId), splitAA(_splitAA)
 {
+	//We assume the user gives the id of the codon table as described by the NCBI tables, which are 1 indexed, not zero.
+	//Some of the tables are skipped so we check for invalid input here.
 	if(tableId == 7 || tableId == 8 || tableId == 15 || tableId == 17 || tableId == 18 || tableId == 19 || tableId == 20)
 	{
         std::cerr << "Invalid codon table: " << tableId << " using default codon table (NCBI codon table 1)\n";
         tableId = 1; //standard codon table by NCBI
     }
-    tableId--; //Make it 0 indexed
+    tableId--; //Make the table id zero indexed from here.
+
+	//TODO: error check the user giving something completely invalid, such as zero.
+
+
+	//If the user does not pass a groupList...
+	if (_groupList == defaultVector)
+	{
+		if (model == "RFP")
+		{
+			groupList = { "GCA", "GCC", "GCG", "GCT", "TGC", "TGT", "GAC", "GAT", "GAA", "GAG",
+				"TTC", "TTT", "GGA", "GGC", "GGG", "GGT", "CAC", "CAT", "ATA", "ATC",
+				"ATT", "AAA", "AAG", "CTA", "CTC", "CTG", "CTT", "TTA", "TTG", "ATG",
+				"AAC", "AAT", "CCA", "CCC", "CCG", "CCT", "CAA", "CAG", "AGA", "AGG",
+				"CGA", "CGC", "CGG", "CGT", "TCA", "TCC", "TCG", "TCT", "ACA", "ACC",
+				"ACG", "ACT", "GTA", "GTC", "GTG", "GTT", "TGG", "TAC", "TAT", "AGC",
+				"AGT", "TAA", "TAG", "TGA" };
+		}
+		else // currently ROC and FONSE 
+		{
+			groupList = splitAA ? defaultSplitAAGroupListings[tableId] : defaultAAGroupListings[tableId];
+		}
+	} //End of default group lists.
+	else //User has provided a groupList to use (presumably a subset of the entire group list as shown above).
+	{
+		groupList = _groupList; //TODO: error check given lists
+	}
 }
 
 
@@ -74,12 +103,6 @@ std::vector<std::vector<unsigned>> CodonTable::getCodonIndexListingWithoutRefere
 }
 
 
-std::vector <std::string> CodonTable::getAAListing()
-{
-    return AAListing;
-}
-
-
 std::vector <std::string> CodonTable::getForParamVectorListing()
 {
     return forParamVectorListing;
@@ -89,6 +112,11 @@ std::vector <std::string> CodonTable::getForParamVectorListing()
 std::map <std::string, std::string> CodonTable::getCodonToAAMap()
 {
     return codonToAAMap;
+}
+
+std::vector<std::string> CodonTable::getGroupList()
+{
+	return groupList;
 }
 
 
@@ -205,7 +233,7 @@ unsigned CodonTable::codonToAAIndex(std::string& codon)
 
 std::string CodonTable::indexToAA(unsigned aaIndex)
 {
-    return AAListing[aaIndex];
+    return groupList[aaIndex];
 }
 
 
@@ -215,537 +243,15 @@ std::string CodonTable::indexToAA(unsigned aaIndex)
 //-----------------------------------//
 void CodonTable::setupCodonTable()
 {
-	unsigned numAA = 21;
-	if(tableId >= 0 && tableId <= 5  && !splitAA) numAA = 20; //If not splitting AAs, tables 1-6 all have 20 AA, excluding stop codes
-    else if (tableId >= 8 && tableId <= 13  && !splitAA) numAA = 20;
-    else if (tableId == 15 && !splitAA) numAA = 20;
-    else if (tableId >= 20 && tableId <= 24 && !splitAA) numAA = 20;
-
-
-    numAA++; //Account for the stop codon
+	unsigned numAA = groupList.size();
 	codonIndexListing.resize(numAA);
 
-    unsigned aaIndex = 0;
-    unsigned filled = 0;
-    while (filled != numAA)
-    {
-        unsigned numCodons = numCodonsPerAAForTable[tableId][aaIndex];
-        if (numCodons != 0)
-        {
-            if (aaIndex == 0) //A
-            {
-                for (unsigned i = 0; i < 4; i++)
-                {
-                    codonIndexListing[filled].push_back(i);
-                }
-                AAToNumCodonsMap.insert(std::make_pair("A", 4));
-            }
-            else if (aaIndex == 1) //C
-            {
-                AAToNumCodonsMap.insert(std::make_pair("C", 2));
-                for (unsigned i = 4; i < 6; i++)
-                {
-                    codonIndexListing[filled].push_back(i);
-                }
-                if (tableId == 10)
-                {
-                    codonIndexListing[filled].push_back(63);
-                    AAToNumCodonsMap["C"]++;
-                }
+	for (unsigned groupIndex = 0; groupIndex < groupList.size(); groupIndex++) {
+		AAMap.insert(std::make_pair(groupList[groupIndex], groupIndex));
+		unsigned AANum = fullAAMap.find(groupList[groupIndex])->second; //TODO: error check
+		AAToNumCodonsMap.insert(std::make_pair(groupList[groupIndex], numCodonsPerAAForTable[tableId][AANum]));
+	}
 
-            }
-            else if (aaIndex == 2) //D
-            {
-                AAToNumCodonsMap.insert(std::make_pair("D", 2));
-                for (unsigned i = 6; i < 8; i++)
-                {
-                    codonIndexListing[filled].push_back(i);
-                }
-            }
-            else if (aaIndex == 3) //E
-            {
-                AAToNumCodonsMap.insert(std::make_pair("E", 2));
-                for (unsigned i = 8; i < 10; i++)
-                {
-                    codonIndexListing[filled].push_back(i);
-                }
-            }
-            else if (aaIndex == 4) //F
-            {
-                AAToNumCodonsMap.insert(std::make_pair("F", 2));
-                for (unsigned i = 10; i < 12; i++)
-                {
-                    codonIndexListing[filled].push_back(i);
-                }
-            }
-            else if (aaIndex == 5) //G
-            {
-                AAToNumCodonsMap.insert(std::make_pair("G", 4));
-                for (unsigned i = 12; i < 16; i++)
-                {
-                    codonIndexListing[filled].push_back(i);
-                }
-                if (tableId == 12)
-                {
-                    AAToNumCodonsMap["G"] += 2;
-                    codonIndexListing[filled].push_back(38);
-                    codonIndexListing[filled].push_back(39);
-                }
-                else if (tableId == 24)
-                {
-                    AAToNumCodonsMap["G"]++;
-                    codonIndexListing[filled].push_back(63);
-                }
-            }
-            else if (aaIndex == 6) //H
-            {
-                AAToNumCodonsMap.insert(std::make_pair("H", 2));
-                for (unsigned i = 16; i < 18; i++)
-                {
-                    codonIndexListing[filled].push_back(i);
-                }
-            }
-            else if (aaIndex == 7) //I
-            {
-                AAToNumCodonsMap.insert(std::make_pair("I", 2));
-                if (tableId == 0 || tableId == 3 || tableId == 5 || tableId == 8 || tableId == 9 || tableId == 10
-                        || tableId == 11 || tableId == 13 || tableId == 15 || tableId >= 21)
-                {
-                    AAToNumCodonsMap["I"]++;
-                    codonIndexListing[filled].push_back(18);
-                }
-                for (unsigned i = 19; i < 21; i++)
-                {
-                    codonIndexListing[filled].push_back(i);
-                }
-            }
-            else if (aaIndex == 8) //K
-            {
-
-                if ((tableId >= 0 && tableId <= 5) || (tableId >= 9 && tableId <= 12) || (tableId == 15) ||
-                        (tableId >= 21))
-                {
-                    AAToNumCodonsMap.insert(std::make_pair("K", 2));
-                    for (unsigned i = 21; i < 23; i++)
-                    {
-                        codonIndexListing[filled].push_back(i);
-                    }
-                }
-                else if (tableId == 8 || tableId == 13 || tableId == 20)
-                {
-                    AAToNumCodonsMap.insert(std::make_pair("K", 1));
-                    codonIndexListing[filled].push_back(22);
-                }
-
-                if (tableId == 23)
-                {
-                    AAToNumCodonsMap["K"]++;
-                    codonIndexListing[filled].push_back(39);
-                }
-            }
-            else if (aaIndex == 9) //L
-            {
-                if (tableId != 2 && tableId != 22)
-                {
-                    if (tableId == 11) AAToNumCodonsMap.insert(std::make_pair("L", 5));
-                    else AAToNumCodonsMap.insert(std::make_pair("L", 6));
-                    for (unsigned i = 23; i < 29; i++)
-                    {
-                        if (i == 25 && tableId != 11)
-                        {
-                            codonIndexListing[filled].push_back(i);
-                        }
-                        else
-                        {
-                            codonIndexListing[filled].push_back(i);
-                        }
-                    }
-                    if ((tableId == 15 || tableId == 21) && !splitAA)
-                    {
-                        AAToNumCodonsMap["L"]++;
-                        codonIndexListing[filled].push_back(62);
-                    }
-                }
-                else if (tableId == 2)
-                {
-                    AAToNumCodonsMap.insert(std::make_pair("L", 2));
-                    for (unsigned i = 27; i < 29; i++)
-                    {
-                        codonIndexListing[filled].push_back(i);
-                    }
-                }
-                else if (tableId == 22)
-                {
-                    AAToNumCodonsMap.insert(std::make_pair("L", 5));
-                    for (unsigned i = 23; i < 27; i++)
-                    {
-                        codonIndexListing[filled].push_back(i);
-                    }
-                    codonIndexListing[filled].push_back(28);
-                }
-            }
-            else if (aaIndex == 10) //Leu1
-            {
-                if (splitAA)
-                {
-                    AAToNumCodonsMap.insert(std::make_pair(CodonTable::Leu1, 1));
-                    codonIndexListing[filled].push_back(62);
-                }
-                else
-                {
-                    filled--;
-                }
-            }
-            else if (aaIndex == 11) //M
-            {
-                AAToNumCodonsMap.insert(std::make_pair("M", 1));
-                codonIndexListing[filled].push_back(29);
-                if (tableId == 1 || tableId == 2 || tableId == 4 || tableId == 12 || tableId == 20)
-                {
-                    AAToNumCodonsMap["M"]++;
-                    codonIndexListing[filled].push_back(18);
-                }
-            }
-            else if (aaIndex == 12) //N
-            {
-                AAToNumCodonsMap["N"] += 2;
-                for (unsigned i = 30; i < 32; i++)
-                {
-                    codonIndexListing[filled].push_back(i);
-                }
-                if (tableId == 8 || tableId == 13 || tableId == 20)
-                {
-                    AAToNumCodonsMap["N"]++;
-                    codonIndexListing[filled].push_back(21);
-                }
-            }
-            else if (aaIndex == 13) //P
-            {
-                AAToNumCodonsMap.insert(std::make_pair("P", 4));
-                for (unsigned i = 32; i < 36; i++)
-                {
-                    codonIndexListing[filled].push_back(i);
-                }
-            }
-            else if (aaIndex == 14) //Q
-            {
-                AAToNumCodonsMap.insert(std::make_pair("Q", 2));
-                for (unsigned i = 36; i < 38; i++)
-                {
-                    codonIndexListing[filled].push_back(i);
-                }
-                if (tableId == 5)
-                {
-                    AAToNumCodonsMap["Q"] += 2;
-                    codonIndexListing[filled].push_back(61);
-                    codonIndexListing[filled].push_back(62);
-                }
-            }
-            else if (aaIndex == 15) //R
-            {
-                AAToNumCodonsMap.insert(std::make_pair("R", 0));
-                if (tableId == 0 || tableId == 2 || tableId == 3 || tableId == 5 || (tableId >= 9 && tableId <= 11) || tableId == 15 ||
-                        tableId == 21 || tableId == 22 || tableId == 24)
-                {
-                    AAToNumCodonsMap["R"] += 2;
-                    codonIndexListing[filled].push_back(38);
-                    codonIndexListing[filled].push_back(39);
-                }
-
-                if (tableId == 2)
-                {
-                    AAToNumCodonsMap["R"] += 2;
-                    codonIndexListing[filled].push_back(42);
-                    codonIndexListing[filled].push_back(43);
-                }
-                else
-                {
-                    AAToNumCodonsMap["R"] += 4;
-                    for (unsigned i = 40; i < 44; i++)
-                    {
-                        codonIndexListing[filled].push_back(i);
-                    }
-                }
-            }
-            else if (aaIndex == 16) //Ser1
-            {
-                if(splitAA)
-                {
-                    AAToNumCodonsMap.insert(std::make_pair(CodonTable::Ser1, 1));
-                    codonIndexListing[filled].push_back(25); //table 12
-                }
-                else
-                {
-                    filled--;
-                }
-            }
-            else if (aaIndex == 17) //Ser2
-            {
-                if (splitAA)
-                {
-                    AAToNumCodonsMap.insert(std::make_pair(CodonTable::Ser2, 2));
-                    codonIndexListing[filled].push_back(59);
-                    codonIndexListing[filled].push_back(60);
-
-                    if (tableId == 4 || tableId == 8 || tableId == 13 || tableId == 20)
-                    {
-                        AAToNumCodonsMap[CodonTable::Ser2] += 2;
-                        codonIndexListing[filled].push_back(38);
-                        codonIndexListing[filled].push_back(39);
-                    }
-                    else if (tableId == 23)
-                    {
-                        AAToNumCodonsMap[CodonTable::Ser2]++;
-                        codonIndexListing[filled].push_back(38);
-                    }
-                }
-                else
-                {
-                    filled--;
-                }
-            }
-            else if (aaIndex == 18) //Ser (Ser4)
-            {
-                AAToNumCodonsMap.insert(std::make_pair("S", 3));
-                if (tableId != 21)
-                {
-                    AAToNumCodonsMap["S"]++;
-                    for(unsigned i = 44; i < 48; i++)
-                    {
-                        codonIndexListing[filled].push_back(i);
-                    }
-                }
-                else
-                {
-                    for(unsigned i = 45; i < 48; i++)
-                    {
-                        codonIndexListing[filled].push_back(i);
-                    }
-                }
-
-                if (!splitAA)
-                {
-                    AAToNumCodonsMap["S"] += 2;
-                    if (tableId == 11)
-                    {
-                        AAToNumCodonsMap["S"]++;
-                        codonIndexListing[filled].push_back(25);
-                    }
-
-                    codonIndexListing[filled].push_back(59);
-                    codonIndexListing[filled].push_back(60);
-
-                    if (tableId == 4 || tableId == 8 || tableId == 13 || tableId == 20)
-                    {
-                        AAToNumCodonsMap["S"] += 2;
-                        codonIndexListing[filled].push_back(38);
-                        codonIndexListing[filled].push_back(39);
-                    }
-                    else if (tableId == 23)
-                    {
-                        AAToNumCodonsMap["S"]++;
-                        codonIndexListing[filled].push_back(38);
-                    }
-                }
-            }
-            else if (aaIndex == 19) //T
-            {
-                AAToNumCodonsMap.insert(std::make_pair("T", 0));
-                if (tableId != 2)
-                {
-                    AAToNumCodonsMap["T"] += 4;
-                    for (unsigned i = 48; i < 52; i++)
-                    {
-                        codonIndexListing[filled].push_back(i);
-                    }
-                }
-                else if (tableId == 2 && !splitAA)
-                {
-                    AAToNumCodonsMap["T"] += 8;
-                    for (unsigned i = 48; i < 52; i++)
-                    {
-                        codonIndexListing[filled].push_back(i);
-                    }
-
-                    for (unsigned i = 23; i < 27; i++)
-                    {
-                        codonIndexListing[filled].push_back(i);
-                    }
-                }
-            }
-            else if (aaIndex == 20) //Thr1
-            {
-                if (splitAA)
-                {
-                    AAToNumCodonsMap.insert(std::make_pair(CodonTable::Thr4_1, 4));
-                    for (unsigned i = 48; i < 52; i++)
-                    {
-                        codonIndexListing[filled].push_back(i);
-                    }
-                }
-                else
-                {
-                    filled--;
-                }
-            }
-            else if (aaIndex == 21) //Thr2
-            {
-                if (splitAA)
-                {
-                    AAToNumCodonsMap.insert(std::make_pair(CodonTable::Thr4_2, 4));
-                    for (unsigned i = 23; i < 27; i++)
-                    {
-                        codonIndexListing[filled].push_back(i);
-                    }
-                }
-                else
-                {
-                    filled--;
-                }
-            }
-            else if (aaIndex == 22) //V
-            {
-                AAToNumCodonsMap.insert(std::make_pair("V", 4));
-                for (unsigned i = 52; i < 56; i++)
-                {
-                    codonIndexListing[filled].push_back(i);
-                }
-            }
-            else if (aaIndex == 23) //W
-            {
-                AAToNumCodonsMap.insert(std::make_pair("W", 1));
-                codonIndexListing[filled].push_back(56);
-                if ((tableId >= 1 && tableId <= 4) || (tableId == 8) || (tableId == 12) || (tableId == 13) || (tableId == 20))
-                {
-                    AAToNumCodonsMap["W"]++;
-                    codonIndexListing[filled].push_back(63);
-                }
-            }
-            else if (aaIndex == 24) //Y
-            {
-                AAToNumCodonsMap.insert(std::make_pair("Y", 2));
-                for (unsigned i = 57; i < 59; i++)
-                {
-                    codonIndexListing[filled].push_back(i);
-                }
-                if (tableId == 13){
-                    AAToNumCodonsMap["Y"]++;
-                    codonIndexListing[filled].push_back(61);
-                }
-            }
-            else if (aaIndex == 25) //X
-            {
-                AAToNumCodonsMap.insert(std::make_pair("X", 1));
-                if (tableId == 5)
-                {
-                    codonIndexListing[filled].push_back(63);
-                }
-                else if (tableId == 13)
-                {
-                    codonIndexListing[filled].push_back(62);
-                }
-                else if (tableId == 15)
-                {
-                    codonIndexListing[filled].push_back(61);
-                    codonIndexListing[filled].push_back(63);
-                    AAToNumCodonsMap["X"]++;
-                }
-                else if ((tableId >= 2 && tableId <= 4) || tableId == 8 || tableId == 9 || tableId == 12 ||
-                        tableId == 20 || tableId == 23 || tableId == 24)
-                {
-                    codonIndexListing[filled].push_back(61);
-                    codonIndexListing[filled].push_back(62);
-                    AAToNumCodonsMap["X"]++;
-                }
-                else if (tableId == 0 || tableId == 10 || tableId == 11)
-                {
-                    codonIndexListing[filled].push_back(61);
-                    codonIndexListing[filled].push_back(63);
-                    codonIndexListing[filled].push_back(62);
-                    AAToNumCodonsMap["X"] += 2;
-                }
-                else if (tableId == 21)
-                {
-                    codonIndexListing[filled].push_back(61);
-                    codonIndexListing[filled].push_back(63);
-                    codonIndexListing[filled].push_back(44);
-                    AAToNumCodonsMap["X"] += 2;
-                }
-                else if (tableId == 1)
-                {
-                    codonIndexListing[filled].push_back(61);
-                    codonIndexListing[filled].push_back(62);
-                    codonIndexListing[filled].push_back(38);
-                    codonIndexListing[filled].push_back(39);
-                    AAToNumCodonsMap["X"] += 3;
-                }
-                else if (tableId == 22)
-                {
-                    codonIndexListing[filled].push_back(61);
-                    codonIndexListing[filled].push_back(63);
-                    codonIndexListing[filled].push_back(62);
-                    codonIndexListing[filled].push_back(27);
-                    AAToNumCodonsMap["X"] += 3;
-                }
-            }
-            filled++;
-        }
-        aaIndex++;
-    }
-
-    //fill without refernce mapping
-    unsigned val = 0;
-    codonIndexListingWithoutReference.resize(numAA);
-    for (unsigned i = 0; i < numAA; i++)
-    {
-        for (unsigned j = 0; j < codonIndexListing[i].size() - 1; j++)
-        {
-            codonIndexListingWithoutReference[i].push_back(codonIndexListing[i][j]);
-            unsigned codonIndex = codonIndexListing[i][j];
-            std::string codon = codonArray[codonIndex];
-            forParamVectorMap.insert(std::make_pair(codon, val));
-            forParamVectorListing.push_back(codon);
-            val++;
-        }
-    }
-
-    //set up aamapping
-    unsigned index = 0;
-    if (splitAA)
-    {
-        for (unsigned i = 0; i < 26; i++)
-        {
-            if (numCodonsPerAAForTable[tableId][i] != 0)
-            {
-                AAListing.push_back(aminoAcidArray[i]);
-                AAMap.insert(std::make_pair(aminoAcidArray[i], index));
-                index++;
-            }
-        }
-    }
-    else
-    {
-        for (unsigned i = 0; i < 21; i++)
-        {
-            AAListing.push_back(aminoAcidArrayWithoutSplit[i]);
-            AAMap.insert(std::make_pair(aminoAcidArrayWithoutSplit[i], index));
-            index++;
-        }
-    }
-
-
-
-
-    //Build a map for the Codon To AA
-    for(unsigned AAIndex = 0; AAIndex < codonIndexListing.size(); AAIndex++)
-    {
-        std::string AA = AAListing[AAIndex];
-        for (unsigned codonIndex = 0; codonIndex < codonIndexListing[AAIndex].size(); codonIndex++)
-        {
-            std::string codon = codonArray[codonIndexListing[AAIndex][codonIndex]];
-            codonToAAMap.insert(std::make_pair(codon, AA));
-        }
-    }
 }
 
 
@@ -781,6 +287,11 @@ const std::vector <std::string> CodonTable::aminoAcidArray = {
         CodonTable::Ser1, CodonTable::Ser2, "S", "T", CodonTable::Thr4_1, CodonTable::Thr4_2, "V", "W", "Y", "X"};
 const std::vector <std::string> CodonTable::aminoAcidArrayWithoutSplit = {
         "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y", "X"};
+
+const std::map<std::string, unsigned> CodonTable::fullAAMap = { { "A", 0 }, { "C", 1 }, { "D", 2 }, { "E", 3 }, { "F", 4 },
+{ "G", 5 }, { "H", 6 }, { "I", 7 }, { "K", 8 }, { "L", 9 }, { CodonTable::Leu1, 10}, { "M", 11 }, { "N", 12 }, { "P", 13 },
+{ "Q", 14 }, { "R", 15 }, { CodonTable::Ser1, 16 }, { CodonTable::Ser2, 17 }, { "S", 18 }, { "T", 19 }, { CodonTable::Thr4_1, 20 },
+{ CodonTable::Thr4_2, 21 }, { "V", 22 }, { "W", 23 }, { "Y", 24 }, { "X", 25 } };
 
 
 const std::map<std::string, unsigned> CodonTable::codonToIndexWithReference = {{"GCA", 0}, {"GCC", 1}, {"GCG", 2},
@@ -829,7 +340,7 @@ const unsigned CodonTable::numCodonsPerAAForTable[25][26] = {
         {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, // 8. Invalid Codon Table
         {4,2,2,2,2,4,2,3,1,6,0,1,3,4,2,4,0,4,4,4,0,0,4,2,2,2}, // 9. The Echinoderm and Flatworm Mitochondrial Code
         {4,3,2,2,2,4,2,3,2,6,0,1,2,4,2,6,0,2,4,4,0,0,4,1,2,2}, // 10. The Euplotid Nuclear Code
-        {4,2,2,2,2,4,2,3,2,6,0,1,2,4,2,6,0,2,4,4,0,0,4,1,2,3}, // 11. The Bacterial, Archaeal and Plant Plastid Codee
+        {4,2,2,2,2,4,2,3,2,6,0,1,2,4,2,6,0,2,4,4,0,0,4,1,2,3}, // 11. The Bacterial, Archaeal and Plant Plastid Code
         {4,2,2,2,2,4,2,3,2,5,0,1,2,4,2,6,1,2,4,4,0,0,4,1,2,3}, // 12. The Alternative Yeast Nuclear Code
         {4,2,2,2,2,6,2,2,2,6,0,2,2,4,2,4,0,2,4,4,0,0,4,2,2,2}, // 13. The Ascidian Mitochondrial Code
         {4,2,2,2,2,4,2,3,1,6,0,1,3,4,2,4,0,4,4,4,0,0,4,2,3,1}, // 14. The Alternative Flatworm Mitochondrial Code
@@ -846,10 +357,689 @@ const unsigned CodonTable::numCodonsPerAAForTable[25][26] = {
         {4,2,2,2,2,5,2,3,2,6,0,1,2,4,2,6,0,2,4,4,0,0,4,1,2,2}, // 25. Candidate Division SR1 and Gracilibacteria Code
 };
 
+const std::vector <std::vector <std::string> > CodonTable::defaultAAGroupListings = {
+	// 1. The Standard Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	"S", "T", "V", "Y" },
+	// 2. The Vertebrate Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R",
+	"S", "T", "V", "W", "Y" },
+	// 3. The Yeast Mitochondrial Cod
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R",
+	"S", "T", "V", "W", "Y" },
+	// 4. The Mold, Protozoan, and Coelenterate Mitochondrial Code and the Mycoplasma/Spiroplasma Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	"S", "T", "V", "W", "Y" },
+	// 5. The Invertebrate Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R",
+	"S", "T", "V", "W", "Y" },
+	// 6. The Ciliate, Dasycladacean and Hexamita Nuclear Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	"S", "T", "V", "Y" },
+	// 7. Invalid Codon Table
+	{},
+	// 8. Invalid Codon Table
+	{},
+	// 9. The Echinoderm and Flatworm Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "L", "N", "P", "Q", "R",
+	"S", "T", "V", "W", "Y" },
+	// 10. The Euplotid Nuclear Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	"S", "T", "V", "Y" },
+	// 11. The Bacterial, Archaeal and Plant Plastid Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	"S", "T", "V", "Y" },
+	// 12. The Alternative Yeast Nuclear Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	"S", "T", "V", "Y" },
+	// 13. The Ascidian Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R",
+	"S", "T", "V", "W", "Y" },
+	// 14. The Alternative Flatworm Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "L", "N", "P", "Q", "R",
+	"S", "T", "V", "W", "Y" },
+	// 15. Invalid Codon Table
+	{},
+	// 16. Chlorophycean Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	"S", "T", "V", "Y" },
+	// 17. Invalid Codon Table
+	{},
+	// 18. Invalid Codon Table
+	{},
+	// 19. Invalid Codon Table
+	{},
+	// 20. Invalid Codon Table
+	{},
+	// 21. Trematode Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "L", "M", "N", "P", "Q", "R",
+	"S", "T", "V", "W", "Y" },
+	// 22. Scenedesmus obliquus Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	"S", "T", "V", "Y" },
+	// 23. Thraustochytrium Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	"S", "T", "V", "Y" },
+	// 24. Pterobranchia Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	"S", "T", "V", "W", "Y" },
+	// 25. Candidate Division SR1 and Gracilibacteria Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	"S", "T", "V", "Y" },
+};
 
-void CodonTable::createCodonTable(unsigned tableId, bool split)
+const std::vector <std::vector <std::string> > CodonTable::defaultSplitAAGroupListings = {
+	// 1. The Standard Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "Y" },
+	// 2. The Vertebrate Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "W", "Y" },
+	// 3. The Yeast Mitochondrial Cod
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", CodonTable::Thr4_1, CodonTable::Thr4_2, "V", "W", "Y" },
+	// 4. The Mold, Protozoan, and Coelenterate Mitochondrial Code and the Mycoplasma/Spiroplasma Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "W", "Y" },
+	// 5. The Invertebrate Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "W", "Y" },
+	// 6. The Ciliate, Dasycladacean and Hexamita Nuclear Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "Y" },
+	// 7. Invalid Codon Table
+	{},
+	// 8. Invalid Codon Table
+	{},
+	// 9. The Echinoderm and Flatworm Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "L", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "W", "Y" },
+	// 10. The Euplotid Nuclear Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "Y" },
+	// 11. The Bacterial, Archaeal and Plant Plastid Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "Y" },
+	// 12. The Alternative Yeast Nuclear Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "Y" },
+	// 13. The Ascidian Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "W", "Y" },
+	// 14. The Alternative Flatworm Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "L", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "W", "Y" },
+	// 15. Invalid Codon Table
+	{},
+	// 16. Chlorophycean Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "Y" },
+	// 17. Invalid Codon Table
+	{},
+	// 18. Invalid Codon Table
+	{},
+	// 19. Invalid Codon Table
+	{},
+	// 20. Invalid Codon Table
+	{},
+	// 21. Trematode Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "L", "M", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "W", "Y" },
+	// 22. Scenedesmus obliquus Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "Y" },
+	// 23. Thraustochytrium Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "Y" },
+	// 24. Pterobranchia Mitochondrial Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "W", "Y" },
+	// 25. Candidate Division SR1 and Gracilibacteria Code
+	{ "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R",
+	CodonTable::Ser2, "S", "T", "V", "Y" },
+};
+
+const std::vector <std::vector <std::vector <std::string> > > CodonTable::codonTableListing = {
+	// 1. The Standard Code
+	{
+		{"GCT", "GCC", "GCA", "GCG"}, // A
+		{"TGT", "TGC" }, // C
+		{"GAT", "GAC" }, // D
+		{"GAA", "GAG"}, // E
+		{"TTT", "TTC"}, // F
+		{"GGT", "GGC", "GGA", "GGG" }, // G
+		{"CAT", "CAC" }, // H
+		{"ATT", "ATC", "ATA"}, // I
+		{"AAA", "AAG" }, // K
+		{"TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{"ATG"}, // M
+		{"AAT", "AAC"}, // N
+		{"CCT", "CCC", "CCA", "CCG"}, // P
+		{"CAA", "CAG"}, // Q
+		{"CGT", "CGC", "CGA", "CGG", "AGA", "AGG"}, // R
+		{}, // CodonTable::Ser1
+		{"AGT", "AGC"}, // CodonTable::Ser2
+		{"TCT", "TCC", "TCA", "TCG"}, // S
+		{"ACT", "ACC", "ACA", "ACG"}, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{"GTT", "GTC", "GTA", "GTG"}, // V
+		{"TGG"}, // W
+		{"TAT", "TAC"}, // Y
+		{"TAA", "TAG", "TGA"}, // X
+	},
+	
+	// 2. The Vertebrate Mitochondrial Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC" }, // I
+		{ "AAA", "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG", "ATA" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG" }, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG", "TGA" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TAG", "AGA", "AGG"}, // X
+	},
+
+	// 3. The Yeast Mitochondrial Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC" }, // I
+		{ "AAA", "AAG" }, // K
+		{ "TTA", "TTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG", "ATA" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG", "AGA", "AGG" }, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{ "CTT", "CTC", "CTA", "CTG" }, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG", "TGA" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TAG" }, // X
+	},
+	// 4. The Mold, Protozoan, and Coelenterate Mitochondrial Code and the Mycoplasma/Spiroplasma Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC", "ATA" }, // I
+		{ "AAA", "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG", "AGA", "AGG" }, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG", "TGA" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TAG" }, // X
+	},
+			// 5. The Invertebrate Mitochondrial Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC" }, // I
+		{ "AAA", "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG", "ATA" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG" }, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC", "AGA", "AGG" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG", "TGA" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TAG" }, // X
+	},
+
+			// 6. The Ciliate, Dasycladacean and Hexamita Nuclear Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC", "ATA" }, // I
+		{ "AAA", "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG", "TAA", "TAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG", "AGA", "AGG" }, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TGA" }, // X
+	},
+	// 7. Invalid Codon Table
+	{},
+	// 8. Invalid Codon Table
+	{},
+	// 9. The Echinoderm and Flatworm Mitochondrial Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC", "ATA" }, // I
+		{ "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG" }, // M
+		{ "AAT", "AAC", "AAA" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG"}, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC", "AGA", "AGG" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG", "TGA" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TAG" }, // X
+	},
+	// 10. The Euplotid Nuclear Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC", "TGA" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC", "ATA" }, // I
+		{ "AAA", "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG", "AGA", "AGG" }, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TAG"}, // X
+	},
+	// 11. The Bacterial, Archaeal and Plant Plastid Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC", "ATA" }, // I
+		{ "AAA", "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG", "AGA", "AGG" }, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TAG", "TGA" }, // X
+	},
+	// 12. The Alternative Yeast Nuclear Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC", "ATA" }, // I
+		{ "AAA", "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG", "AGA", "AGG" }, // R
+		{ "CTG" }, // CodonTable::Ser1
+		{ "AGT", "AGC" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TAG", "TGA" }, // X
+	},
+	// 13. The Ascidian Mitochondrial Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG", "AGA", "AGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC" }, // I
+		{ "AAA", "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG", "ATA" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG" }, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG", "TGA" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TAG" }, // X
+	},
+	// 14. The Alternative Flatworm Mitochondrial Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC", "ATA" }, // I
+		{ "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG" }, // M
+		{ "AAT", "AAC", "AAA" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG"}, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC", "AGA", "AGG" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG", "TGA" }, // W
+		{ "TAT", "TAC", "TAA" }, // Y
+		{ "TAG" }, // X
+	},
+	// 15. Invalid Codon Table
+	// 16. Chlorophycean Mitochondrial Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC", "ATA" }, // I
+		{ "AAA", "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{ "TAG" }, // CodonTable::Leu1
+		{ "ATG" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG", "AGA", "AGG" }, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TGA" }, // X
+	},
+	// 17. Invalid Codon Table
+	// 18. Invalid Codon Table
+	// 19. Invalid Codon Table
+	// 20. Invalid Codon Table
+	// 21. Trematode Mitochondrial Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC" }, // I
+		{ "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG", "ATA" }, // M
+		{ "AAT", "AAC", "AAA" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG"}, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC", "AGA", "AGG" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG", "TGA" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TAG"}, // X
+	},
+	// 22. Scenedesmus obliquus Mitochondrial Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC", "ATA" }, // I
+		{ "AAA", "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{ "TAG" }, // CodonTable::Leu1
+		{ "ATG" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG", "AGA", "AGG" }, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TGA", "TCA" }, // X
+	},
+	// 23. Thraustochytrium Mitochondrial Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC", "ATA" }, // I
+		{ "AAA", "AAG" }, // K
+		{ "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG", "AGA", "AGG" }, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TAG", "TGA", "TTA" }, // X
+	},
+	// 24. Pterobranchia Mitochondrial Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC", "ATA" }, // I
+		{ "AAA", "AAG", "AGG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG"}, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC", "AGA" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG", "TGA" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TAG" }, // X
+	},
+	// 25. Candidate Division SR1 and Gracilibacteria Code
+	{
+		{ "GCT", "GCC", "GCA", "GCG" }, // A
+		{ "TGT", "TGC" }, // C
+		{ "GAT", "GAC" }, // D
+		{ "GAA", "GAG" }, // E
+		{ "TTT", "TTC" }, // F
+		{ "GGT", "GGC", "GGA", "GGG", "TGA" }, // G
+		{ "CAT", "CAC" }, // H
+		{ "ATT", "ATC", "ATA" }, // I
+		{ "AAA", "AAG" }, // K
+		{ "TTA", "TTG", "CTT", "CTC", "CTA", "CTG" }, // L
+		{}, // CodonTable::Leu1
+		{ "ATG" }, // M
+		{ "AAT", "AAC" }, // N
+		{ "CCT", "CCC", "CCA", "CCG" }, // P
+		{ "CAA", "CAG" }, // Q
+		{ "CGT", "CGC", "CGA", "CGG", "AGA", "AGG" }, // R
+		{}, // CodonTable::Ser1
+		{ "AGT", "AGC" }, // CodonTable::Ser2
+		{ "TCT", "TCC", "TCA", "TCG" }, // S
+		{ "ACT", "ACC", "ACA", "ACG" }, // T
+		{}, // CodonTable::Thr4_1
+		{}, // CodonTable::Thr4_2
+		{ "GTT", "GTC", "GTA", "GTG" }, // V
+		{ "TGG" }, // W
+		{ "TAT", "TAC" }, // Y
+		{ "TAA", "TAG" }, // X
+	},
+};
+
+void CodonTable::createCodonTable(unsigned tableId, std::string model, bool split, std::vector <std::string> groupList)
 {
-    codonTable = new CodonTable(tableId, split);
+
+    codonTable = new CodonTable(tableId, model, split, groupList);
     codonTable -> setupCodonTable();
 }
 
@@ -941,7 +1131,7 @@ std::map <std::string, unsigned> CodonTable::getForParamVectorMapR()
 unsigned CodonTable::getNumCodonsForAAIndexR(unsigned aaIndex, bool forParamVector)
 {
     unsigned numCodons = 0;
-    bool check = checkIndex(aaIndex, 1, (unsigned)AAListing.size());
+    bool check = checkIndex(aaIndex, 1, (unsigned)groupList.size());
     if (check)
     {
         aaIndex--;
@@ -989,7 +1179,7 @@ unsigned CodonTable::AAToAAIndexR(std::string aa)
 std::vector <unsigned> CodonTable::AAIndexToCodonRangeR(unsigned aaIndex, bool forParamVector)
 {
     std::vector <unsigned> RV;
-    bool check = checkIndex(aaIndex, 1, (unsigned)AAListing.size());
+    bool check = checkIndex(aaIndex, 1, (unsigned)groupList.size());
     if (check)
     {
         aaIndex--;
@@ -1127,7 +1317,7 @@ unsigned CodonTable::codonToAAIndexR(std::string& codon)
 std::string CodonTable::indexToAAR(unsigned aaIndex)
 {
     std::string AA = "";
-    bool check = checkIndex(aaIndex, 1, (unsigned)AAListing.size());
+    bool check = checkIndex(aaIndex, 1, (unsigned)groupList.size());
     if (check)
     {
         aaIndex--;

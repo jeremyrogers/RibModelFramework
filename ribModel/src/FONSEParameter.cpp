@@ -147,7 +147,7 @@ void FONSEParameter::initFONSEParameterSet()
 	}
 
 	/* BUG: Max Grouping correct here? */
-	std::vector <std::string> groupings = ct->getAAListing();
+	std::vector <std::string> groupings = ct->getGroupList();
 	for (unsigned i = 0; i < groupings.size(); i++)
 	{
 		std::string aa = groupings.at(i);
@@ -165,7 +165,7 @@ std::vector <std::vector <double> > FONSEParameter::calculateSelectionCoefficien
 	std::vector<std::vector<double>> selectionCoefficients;
 	selectionCoefficients.resize(numGenes);
 	std::vector <std::string> codonListingWithoutReference = ct->getForParamVectorListing();
-	std::vector <std::string> aaListing = ct->getAAListing();
+	std::vector <std::string> aaListing = ct->getGroupList();
 	for (unsigned i = 0; i < numGenes; i++)
 	{
 		for (unsigned j = 0; j < aaListing.size(); j++)
@@ -622,7 +622,7 @@ void FONSEParameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptatio
 {
 	unsigned numCSPsets = numAcceptForMutationAndSelection.size();
 	std::cout << "acceptance ratio for amino acid:\n\t";
-	std::vector <std::string> aaListing = ct->getAAListing();
+	std::vector <std::string> aaListing = ct->getGroupList();
 	for (unsigned i = 0; i < numCSPsets; i++)
 	{
 		// TODO: fix for groupList
@@ -905,7 +905,7 @@ double FONSEParameter::getMutationVariance(unsigned mixtureElement, unsigned sam
 
 void FONSEParameter::proposeCodonSpecificParameter()
 {
-	std::vector <std::string> aaListing = ct->getAAListing();
+	std::vector <std::string> aaListing = ct->getGroupList();
 	for (unsigned k = 0; k < aaListing.size(); k++)
 	{
 		std::vector<double> iidProposed;

@@ -135,7 +135,7 @@ void ROCParameter::initROCParameterSet()
 		proposedSelectionParameter[i] = tmp;
 		currentSelectionParameter[i] = tmp;
 	}
-	std::vector <std::string> aaListing = ct->getAAListing();
+	std::vector <std::string> aaListing = ct->getGroupList();
 
   for (unsigned i = 0; i < aaListing.size(); i++)
   {
@@ -156,7 +156,7 @@ std::vector<std::vector<double>> ROCParameter::calculateSelectionCoefficients(un
 	unsigned numGenes = (unsigned)mixtureAssignment.size();
 	std::vector<std::vector<double>> selectionCoefficients;
 	selectionCoefficients.resize(numGenes);
-	std::vector <std::string> aaListing = ct->getAAListing();
+	std::vector <std::string> aaListing = ct->getGroupList();
 	std::vector <std::string> codonListing = ct->getForParamVectorListing();
 	for (unsigned i = 0; i < numGenes; i++)
 	{
@@ -198,7 +198,7 @@ void ROCParameter::writeROCRestartFile(std::string filename)
 {
 	std::ofstream out;
 	out.open(filename.c_str(), std::ofstream::app);
-	std::vector <std::string> aaListing = ct->getAAListing();
+	std::vector <std::string> aaListing = ct->getGroupList();
 
 	if (out.fail())
 	{
@@ -738,7 +738,7 @@ void ROCParameter::adaptSynthesisRateProposalWidth(unsigned adaptationWidth)
 void ROCParameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptationWidth)
 {
 	std::cout << "acceptance ratio for amino acid:\n\t";
-	std::vector <std::string> aaListing = ct->getAAListing();
+	std::vector <std::string> aaListing = ct->getGroupList();
 	for (unsigned i = 0; i < aaListing.size(); i++)
 	{
 		if (aaListing[i] == "W" || aaListing[i] == "M" || aaListing[i] == "X") continue;
@@ -1066,7 +1066,7 @@ double ROCParameter::getMutationVariance(unsigned mixtureElement, unsigned sampl
 // 4. the adjusment of the likelihood by the jacobian that arises from this transformation is cheap and by grouping everything in one class it takes place more or less at the same place
 void ROCParameter::proposeCodonSpecificParameter()
 {
-	std::vector <std::string> aaListing = ct->getAAListing();
+	std::vector <std::string> aaListing = ct->getGroupList();
 	for (unsigned k = 0; k < aaListing.size(); k++)
 	{
 		std::vector<double> iidProposed;

@@ -8,10 +8,11 @@
 #include <vector>
 #include <array>
 
-
 class CodonTable
 {
     private:
+
+		static std::vector <std::string> defaultVector;
 
         static CodonTable *codonTable;
         unsigned tableId;
@@ -20,7 +21,6 @@ class CodonTable
         std::vector<std::vector<unsigned>> codonIndexListingWithoutReference;
         //Stored by AA index then codon index. Excludes the last codon index in every AA grouping.
 
-        std::vector <std::string> AAListing; //List of all AAs for the current tableId and split condition.
         std::vector <std::string> forParamVectorListing; //List of all codons without the last codon in every AA group.
         std::map <std::string, std::string> codonToAAMap; //Maps ALL codons for current conditions to AAs.
         std::map <std::string, unsigned> AAMap; //Maps currently used AAs to indices.
@@ -29,13 +29,18 @@ class CodonTable
 
         std::map <std::string, unsigned> forParamVectorMap;
         //Maps codons to indices (not including last in each AA grouping).
+		std::vector <std::string> groupList;
 
+		const static std::vector <std::vector <std::string> > defaultAAGroupListings;
+		const static std::vector <std::vector <std::string> > defaultSplitAAGroupListings;
+
+		const static std::vector <std::vector <std::vector <std::string> > > codonTableListing;
 
     public:
 
         //Constructors & destructors:
         explicit CodonTable(); //Defaults to table 1 and splitting AA
-        CodonTable(unsigned _tableId, bool _splitAA);
+        CodonTable(unsigned _tableId, std::string model, bool _splitAA = true, std::vector <std::string> _groupList = defaultVector);
         virtual ~CodonTable();
         CodonTable(const CodonTable& other); //Todo: Need? If so update the function.
         CodonTable& operator=(const CodonTable& other); //Todo: Need? if so update the function.
@@ -47,9 +52,9 @@ class CodonTable
         bool getSplitAA();
         std::vector<std::vector<unsigned>> getCodonIndexListing();
         std::vector<std::vector<unsigned>> getCodonIndexListingWithoutReference();
-        std::vector<std::string> getAAListing();
         std::vector <std::string> getForParamVectorListing(); //List of all codons without the last codon in every AA group.
         std::map <std::string, std::string> getCodonToAAMap(); //Maps ALL codons for current conditions to AAs.
+		std::vector <std::string> getGroupList();
         std::map <std::string, unsigned> getAAMap(); //Maps currently used AAs to indices.
         std::map <std::string, unsigned> getAAToNumCodonsMap();
         std::map <std::string, unsigned> getForParamVectorMap();
@@ -88,6 +93,7 @@ class CodonTable
 
         static const std::vector <std::string> aminoAcidArray; //Index = AA
         static const std::vector <std::string> aminoAcidArrayWithoutSplit; //Array containing all non-split AAs.
+		static const std::map<std::string, unsigned> fullAAMap; 
         static const std::map<std::string, unsigned> codonToIndexWithReference; //Map of indices to all codons.
         static const std::string codonArray[]; //List of codons.
         static const std::vector <std::string> codonTableDefinition;
@@ -96,7 +102,7 @@ class CodonTable
         static const unsigned numCodonsPerAAForTable[25][26]; //Sized on tableId and AA.
 
 
-        static void createCodonTable(unsigned tableId, bool split = true); //Used to create the singleton instance.
+        static void createCodonTable(unsigned tableId, std::string model, bool split = true, std::vector <std::string> groupList = defaultVector); //Used to create the singleton instance.
         static CodonTable* getInstance(); //Get the singleton instance.
 
 

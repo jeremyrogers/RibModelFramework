@@ -801,7 +801,7 @@ double Parameter::calculateSCUO(Gene& gene, unsigned maxAA)
 {
 	CodonTable *ct = CodonTable::getInstance();
 	SequenceSummary seqsum = gene.getSequenceSummary();
-	std::vector <std::string> aaListing = ct->getAAListing();
+	std::vector <std::string> aaListing = ct->getGroupList();
 
 	double totalDegenerateAACount = 0.0;
 	for(unsigned i = 0; i < aaListing.size(); i++)

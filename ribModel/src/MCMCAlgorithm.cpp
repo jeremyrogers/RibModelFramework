@@ -225,7 +225,7 @@ void MCMCAlgorithm::acceptRejectHyperParameter(Genome &genome, Model& model, int
 void MCMCAlgorithm::acceptRejectCodonSpecificParameter(Genome& genome, Model& model, int iteration)
 {
 	CodonTable *ct = CodonTable::getInstance();
-	std::vector <std::string> aaListing = ct->getAAListing();
+	std::vector <std::string> aaListing = ct->getGroupList();
 	double acceptanceRatioForAllMixtures = 0.0;
 
 	for(unsigned i = 0; i < aaListing.size(); i++)
@@ -261,7 +261,7 @@ void MCMCAlgorithm::varyInitialConditions(Genome& genome, Model& model, unsigned
 	// divergence from initial conditions is not stored in trace
 
 	CodonTable *ct = CodonTable::getInstance();
-	std::vector <std::string> aaListing = ct->getAAListing();
+	std::vector <std::string> aaListing = ct->getGroupList();
 	// how many steps do you want to walk "away" from the initial conditions
 	for(unsigned iteration = 0u; iteration < divergenceIterations; iteration++)
 	{
