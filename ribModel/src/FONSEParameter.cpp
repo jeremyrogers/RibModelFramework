@@ -164,20 +164,18 @@ std::vector <std::vector <double> > FONSEParameter::calculateSelectionCoefficien
 	unsigned numGenes = mixtureAssignment.size();
 	std::vector<std::vector<double>> selectionCoefficients;
 	selectionCoefficients.resize(numGenes);
-	std::vector <std::string> codonListingWithoutReference = ct->getForParamVectorListing();
 	std::vector <std::string> aaListing = ct->getGroupList();
 	for (unsigned i = 0; i < numGenes; i++)
 	{
 		for (unsigned j = 0; j < aaListing.size(); j++)
 		{
 			std::string aa = aaListing[j];
-			if (aa == "W" || aa == "M" || aa == "X") continue;
 			std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
 			std::vector<double> tmp;
 			double minValue = 0.0;
 			for (unsigned k = 0; k < codonRange.size(); k++)
 			{
-				std::string codon = codonListingWithoutReference[codonRange[k]];
+				std::string codon = ct->codonArray[codonRange[k]];
 				tmp.push_back(getSelectionPosteriorMean(sample, mixture, codon));
 				if (tmp[k] < minValue)
 				{

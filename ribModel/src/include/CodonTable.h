@@ -17,11 +17,13 @@ class CodonTable
         static CodonTable *codonTable;
         unsigned tableId;
         bool splitAA;
-        std::vector<std::vector<unsigned>> codonIndexListing; //Stored by AA index then codon index.
-        std::vector<std::vector<unsigned>> codonIndexListingWithoutReference;
         //Stored by AA index then codon index. Excludes the last codon index in every AA grouping.
 
-        std::vector <std::string> forParamVectorListing; //List of all codons without the last codon in every AA group.
+		std::map <std::string, std::vector <std::string>> AAToCodonMap;
+		std::map <std::string, std::vector <unsigned>> AAToCodonIndexMap;
+		std::map <std::string, std::vector <std::string>> AAToCodonMapWithoutReference;
+		std::map <std::string, std::vector <unsigned>> AAToCodonIndexMapWithoutReference;
+        //std::vector <std::string> forParamVectorListing; //List of all codons without the last codon in every AA group.
         std::map <std::string, std::string> codonToAAMap; //Maps ALL codons for current conditions to AAs.
         std::map <std::string, unsigned> AAMap; //Maps currently used AAs to indices.
         std::map <std::string, unsigned> AAToNumCodonsMap;
@@ -50,9 +52,6 @@ class CodonTable
         //Getter functions:
         unsigned getTableId();
         bool getSplitAA();
-        std::vector<std::vector<unsigned>> getCodonIndexListing();
-        std::vector<std::vector<unsigned>> getCodonIndexListingWithoutReference();
-        std::vector <std::string> getForParamVectorListing(); //List of all codons without the last codon in every AA group.
         std::map <std::string, std::string> getCodonToAAMap(); //Maps ALL codons for current conditions to AAs.
 		std::vector <std::string> getGroupList();
         std::map <std::string, unsigned> getAAMap(); //Maps currently used AAs to indices.
@@ -61,14 +60,13 @@ class CodonTable
 
         unsigned getNumCodonsForAA(std::string aa, bool forParamVector = false);
         unsigned getNumCodonsForAAIndex(unsigned aaIndex, bool forParamVector = false);
-        std::string getForParamVectorCodon(unsigned codonIndex);
 
 
 
         //Mapping operations:
         unsigned AAToAAIndex(std::string aa);
         std::vector <unsigned> AAIndexToCodonRange(unsigned aaIndex, bool forParamVector = false);
-        std::string indexToCodon(unsigned index, bool forParamVector = false);
+        std::string indexToCodon(unsigned index);
         std::vector <unsigned> AAToCodonRange(std::string aa, bool forParamVector = false);
         std::vector<std::string> AAToCodon(std::string aa, bool forParamVector = false);
         std::string codonToAA(std::string& codon);
@@ -123,7 +121,7 @@ class CodonTable
         //Mapping operations:
         unsigned AAToAAIndexR(std::string aa);
         std::vector <unsigned> AAIndexToCodonRangeR(unsigned aaIndex, bool forParamVector = false);
-        std::string indexToCodonR(unsigned index, bool forParamVector = false);
+        std::string indexToCodonR(unsigned index);
         std::vector <unsigned> AAToCodonRangeR(std::string aa, bool forParamVector = false);
         std::vector<std::string> AAToCodonR(std::string aa, bool forParamVector = false);
         std::string codonToAAR(std::string& codon);

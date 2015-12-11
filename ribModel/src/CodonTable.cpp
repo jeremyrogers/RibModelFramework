@@ -90,25 +90,6 @@ bool CodonTable::getSplitAA()
     return splitAA;
 }
 
-
-std::vector<std::vector<unsigned>> CodonTable::getCodonIndexListing()
-{
-    return codonIndexListing;
-}
-
-
-std::vector<std::vector<unsigned>> CodonTable::getCodonIndexListingWithoutReference()
-{
-    return codonIndexListingWithoutReference;
-}
-
-
-std::vector <std::string> CodonTable::getForParamVectorListing()
-{
-    return forParamVectorListing;
-}
-
-
 std::map <std::string, std::string> CodonTable::getCodonToAAMap()
 {
     return codonToAAMap;
@@ -152,13 +133,6 @@ unsigned CodonTable::getNumCodonsForAAIndex(unsigned aaIndex, bool forParamVecto
 }
 
 
-std::string CodonTable::getForParamVectorCodon(unsigned codonIndex)
-{
-    return forParamVectorListing[codonIndex];
-}
-
-
-
 //--------------------------------------//
 //----------Mapping Operations----------//
 //--------------------------------------//
@@ -170,13 +144,13 @@ unsigned CodonTable::AAToAAIndex(std::string aa)
 
 std::vector <unsigned> CodonTable::AAIndexToCodonRange(unsigned aaIndex, bool forParamVector)
 {
-    return forParamVector ? codonIndexListingWithoutReference[aaIndex] : codonIndexListing[aaIndex];
+    return forParamVector ? AAToCodonIndexMapWithoutReference.find(groupList[aaIndex])->second : AAToCodonIndexMap.find(groupList[aaIndex])->second;
 }
 
 
-std::string CodonTable::indexToCodon(unsigned index, bool forParamVector)
+std::string CodonTable::indexToCodon(unsigned index)
 {
-    return forParamVector ? forParamVectorListing[index] : CodonTable::codonArray[index];
+    return CodonTable::codonArray[index];
 }
 
 
@@ -244,12 +218,42 @@ std::string CodonTable::indexToAA(unsigned aaIndex)
 void CodonTable::setupCodonTable()
 {
 	unsigned numAA = groupList.size();
-	codonIndexListing.resize(numAA);
+	std::vector <unsigned> codonIndices;
+	std::vector <std::string> codons;
 
 	for (unsigned groupIndex = 0; groupIndex < groupList.size(); groupIndex++) {
 		AAMap.insert(std::make_pair(groupList[groupIndex], groupIndex));
 		unsigned AANum = fullAAMap.find(groupList[groupIndex])->second; //TODO: error check
 		AAToNumCodonsMap.insert(std::make_pair(groupList[groupIndex], numCodonsPerAAForTable[tableId][AANum]));
+	}
+
+	// setup AAToCodon
+
+	for (unsigned groupIndex = 0; groupIndex < groupList.size(); groupIndex++)
+	{
+		unsigned AAIndex = fullAAMap.find(groupList[groupIndex])->second;
+		AAToCodonMap.insert(std::make_pair(groupList[groupIndex], codonTableListing[tableId][AAIndex]));
+		for (unsigned codonId = 0; codonId < codonTableListing[tableId][AAIndex].size(); codonId++)
+		{
+			codonIndices.push_back(codonToIndexWithReference.find(codonTableListing[tableId][AAIndex][codonId])->second);
+		}
+
+		AAToCodonIndexMap.insert(std::make_pair(groupList[groupIndex], codonIndices));
+		codonIndices.resize(0);
+	}
+
+	for (unsigned groupIndex = 0; groupIndex < groupList.size(); groupIndex++)
+	{
+		unsigned AAIndex = fullAAMap.find(groupList[groupIndex])->second;
+		for (unsigned codonId = 0; codonId < codonTableListing[tableId][AAIndex].size() - 1; codonId++)
+		{
+			codons.push_back(codonTableListing[tableId][AAIndex][codonId]);
+			codonIndices.push_back(codonToIndexWithReference.find(codonTableListing[tableId][AAIndex][codonId])->second);
+		}
+		AAToCodonMapWithoutReference.insert(std::make_pair(groupList[groupIndex], codons));
+		AAToCodonIndexMapWithoutReference.insert(std::make_pair(groupList[groupIndex], codonIndices));
+		codonIndices.resize(0);
+		codons.resize(0);
 	}
 
 }
@@ -1066,40 +1070,6 @@ unsigned CodonTable::getTableIdR()
 }
 
 
-std::vector<std::vector<unsigned>> CodonTable::getCodonIndexListingR()
-{
-    std::vector<std::vector<unsigned>> RV = getCodonIndexListing();
-
-    //Increment every element in the vector since R is 1 indexed.
-    for (unsigned i = 0; i < RV.size(); i++)
-    {
-        for(unsigned j = 0; j < RV[i].size(); j++)
-        {
-            RV[i][j]++;
-        }
-    }
-
-    return RV;
-}
-
-
-std::vector<std::vector<unsigned>> CodonTable::getCodonIndexListingWithoutReferenceR()
-{
-    std::vector<std::vector<unsigned>> RV = getCodonIndexListingWithoutReference();
-
-    //Increment every element in the vector since R is 1 indexed.
-    for (unsigned i = 0; i < RV.size(); i++)
-    {
-        for(unsigned j = 0; j < RV[i].size(); j++)
-        {
-            RV[i][j]++;
-        }
-    }
-
-    return RV;
-}
-
-
 std::map <std::string, unsigned> CodonTable::getAAMapR()
 {
     //Return the map where all the indices are start from 1.
@@ -1141,20 +1111,6 @@ unsigned CodonTable::getNumCodonsForAAIndexR(unsigned aaIndex, bool forParamVect
 }
 
 
-std::string CodonTable::getForParamVectorCodonR(unsigned codonIndex)
-{
-    std::string codon = "";
-    bool check = checkIndex(codonIndex, 1, (unsigned)forParamVectorListing.size());
-    if (check)
-    {
-        codonIndex--;
-        codon = getForParamVectorCodon(codonIndex);
-    }
-    return codon;
-}
-
-
-
 //--------------------------------------//
 //----------Mapping Operations----------//
 //--------------------------------------//
@@ -1194,15 +1150,15 @@ std::vector <unsigned> CodonTable::AAIndexToCodonRangeR(unsigned aaIndex, bool f
 }
 
 
-std::string CodonTable::indexToCodonR(unsigned index, bool forParamVector)
+std::string CodonTable::indexToCodonR(unsigned index)
 {
     std::string codon = "";
     bool check;
-    check = forParamVector ? checkIndex(index, 1, (unsigned)forParamVectorListing.size()) : checkIndex(index, 1, 64);
+    check = checkIndex(index, 1, 64);
     if (check)
     {
         index--;
-        codon = indexToCodon(index, forParamVector);
+        codon = indexToCodon(index);
     }
     else
     {
@@ -1421,8 +1377,6 @@ RCPP_MODULE(CodonTable_mod)
         //Getter functions:
 		.method("getTableId", &CodonTable::getTableIdR)
 		.method("getSplitAA", &CodonTable::getSplitAA)
-        .method("getCodonIndexListing", &CodonTable::getCodonIndexListingR)
-        .method("getCodonIndexListingWithoutReference", &CodonTable::getCodonIndexListingWithoutReferenceR)
         .method("getAAListing", &CodonTable::getAAListing)
         .method("getForParamVectorListing", &CodonTable::getForParamVectorListing)
         .method("getCodonToAAMap", &CodonTable::getCodonToAAMap)

@@ -157,19 +157,17 @@ std::vector<std::vector<double>> ROCParameter::calculateSelectionCoefficients(un
 	std::vector<std::vector<double>> selectionCoefficients;
 	selectionCoefficients.resize(numGenes);
 	std::vector <std::string> aaListing = ct->getGroupList();
-	std::vector <std::string> codonListing = ct->getForParamVectorListing();
 	for (unsigned i = 0; i < numGenes; i++)
 	{
 		for (unsigned j = 0; j < aaListing.size(); j++)
 		{
 			std::string aa = aaListing[j];
-			if (aa == "X" || aa == "W" || aa == "M") continue;
 			std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
 			std::vector<double> tmp;
 			double minValue = 0.0;
 			for (unsigned k = 0; k < codonRange.size(); k++)
 			{
-				std::string codon = codonListing[codonRange[k]];
+				std::string codon = ct->codonArray[codonRange[k]];
 				tmp.push_back(getSelectionPosteriorMean(sample, mixture, codon));
 				if (tmp[codonRange[k]] < minValue)
 				{
