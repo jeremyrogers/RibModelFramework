@@ -55,6 +55,8 @@ class ROCParameter : public Parameter
 		static const unsigned dM;
 		static const unsigned dEta;
 
+		static const unsigned maxGrouping;
+		static const unsigned numParam;
 		//Constructors & Destructors:
 		ROCParameter();
 		explicit ROCParameter(std::string filename);

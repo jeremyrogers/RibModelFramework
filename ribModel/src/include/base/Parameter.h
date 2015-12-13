@@ -13,6 +13,7 @@
 #endif
 
 #include "../Genome.h"
+#include "../CodonTable.h"
 #include "../CovarianceMatrix.h"
 #include "Trace.h"
 
@@ -40,12 +41,11 @@ class Parameter {
 		static const std::string allUnique;
 		static const std::string selectionShared;
 		static const std::string mutationShared;
-#ifdef STANDALONE
+
 		static std::default_random_engine generator; // static to make sure that the same generator is during the runtime.
-#endif
+
 		Parameter();
-		Parameter(unsigned maxGrouping);
-		void initParameterSet(std::vector<double> sphi, unsigned _numMixtures, std::vector<unsigned> geneAssignment,
+		void initParameterSet(std::vector <double> sphi, unsigned _numMixtures, std::vector<unsigned> geneAssignment,
 				std::vector<std::vector<unsigned>> mixtureDefinitionMatrix, bool splitSer = true,
 				std::string _mutationSelectionState = "allUnique");
 		Parameter& operator=(const Parameter& rhs);
@@ -55,12 +55,6 @@ class Parameter {
 		bool checkIndex(unsigned index, unsigned lowerbound, unsigned upperbound);
 		void writeBasicRestartFile(std::string filename);
 		void initBaseValuesFromFile(std::string filename);
-
-
-		unsigned int getNumParam()
-		{
-			return numParam;
-		}
 
 		// functions to manage Sphi
 		double getSphi(unsigned selectionCategory, bool proposed = false)
@@ -73,7 +67,7 @@ class Parameter {
 		}
 		void updateSphi()
 		{
-			for(unsigned i = 0u; i < numSelectionCategories; i++)
+			for (unsigned i = 0u; i < numSelectionCategories; i++)
 			{
 				Sphi[i] = Sphi_proposed[i];
 			}
@@ -190,12 +184,12 @@ class Parameter {
 		virtual std::vector<double> getEstimatedMixtureAssignmentProbabilities(unsigned samples,
 				unsigned geneIndex) = 0;
 
-		virtual double getSphiVariance(unsigned samples, unsigned mixture, bool unbiased) = 0;
+		virtual double getSphiVariance(unsigned samples, unsigned mixture, bool unbiased = true) = 0;
 		virtual double getSynthesisRateVariance(unsigned samples, unsigned geneIndex, unsigned mixtureElement,
 				bool unbiased = true) = 0;
 
 		// static functions
-		static double calculateSCUO(Gene& gene, unsigned maxAA);
+		static double calculateSCUO(Gene& gene);
 
 		static void drawIidRandomVector(unsigned draws, double mean, double sd, double (*proposal)(double a, double b),
 				double* randomNumbers);
@@ -204,7 +198,7 @@ class Parameter {
 		static double randLogNorm(double m, double s);
 		static double randExp(double r);
 		static double randGamma(double shape, double rate);
-		static void randDirichlet(double *input, unsigned numElements, double *output);
+		static void randDirichlet(double* input, unsigned numElements, double* output);
 		static double randUnif(double minVal, double maxVal);
 		static unsigned randMultinom(double* probabilities, unsigned mixtureElements);
 
@@ -219,11 +213,11 @@ class Parameter {
 		{
 			InitializeSynthesisRate(genome, sd_phi);
 		}
-		void initializeSynthesisRateByRandom(double sd_phi)
+		void initializeSynthesisRateByList(double sd_phi)
 		{
 			InitializeSynthesisRate(sd_phi);
 		}
-		void initializeSynthesisRateByList(std::vector<double> expression)
+		void initializeSynthesisRateByRandom(std::vector<double> expression)
 		{
 			InitializeSynthesisRate(expression);
 		}
@@ -253,27 +247,23 @@ class Parameter {
 		unsigned getSelectionCategoryForMixture(unsigned mixtureElement);
 		unsigned getSynthesisRateCategoryForMixture(unsigned mixtureElement);
 		std::vector<double> getCurrentSynthesisRateForMixture(unsigned mixture);
-		void setGroupList(std::vector<std::string> gl);
-		std::string getGrouping(unsigned index);
-		std::vector<std::string> getGroupList();
-		unsigned getGroupListSize();
 
 		void setLastIteration(unsigned iteration) { lastIteration = iteration; }
 		unsigned getLastIteration() { return lastIteration; }
 
 	protected:
-		std::vector<double> Sphi;
-		std::vector<double> Sphi_proposed;
+		std::vector <double> Sphi;
+		std::vector <double> Sphi_proposed;
 
 		unsigned phiGroupings;
 		unsigned numMixtures;
-		unsigned int numParam;
 
 		unsigned lastIteration;
 
 		unsigned numMutationCategories; //TODO Probably needs to be renamed
 		unsigned numSelectionCategories; //TODO Probably needs to be renamed
 
+		CodonTable *ct;
 		//Objects
 		std::vector<mixtureDefinition> categories;
 
@@ -292,7 +282,6 @@ class Parameter {
 		// proposal bias and std for phi values
 		double bias_phi;
 		std::vector<std::vector<double>> std_phi;
-		unsigned maxGrouping;
 };
 
 #endif // PARAMETER_H

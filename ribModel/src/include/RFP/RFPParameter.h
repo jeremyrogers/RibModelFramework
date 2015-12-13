@@ -39,6 +39,10 @@ class RFPParameter: public Parameter {
 		std::vector <double> tmp;
 
 	public:
+
+		static const unsigned maxGrouping;
+		static const unsigned numParam;
+
 		//Constructors & destructors:
 		explicit RFPParameter();
 		RFPParameter(std::string filename);

@@ -57,14 +57,16 @@ void FONSETrace::initSelectionParameterTrace(unsigned samples, unsigned numSelec
 
 std::vector <double> FONSETrace::getMutationParameterTraceByMixtureElementForCodon(unsigned mixtureElement, std::string &codon)
 {
-	unsigned codonIndex = SequenceSummary::codonToIndex(codon, true);
+	CodonTable *ct = CodonTable::getInstance();
+	unsigned codonIndex = ct->codonToIndex(codon);
 	unsigned category = getMutationCategory(mixtureElement);
 	return mutationParameterTrace[category][codonIndex];
 }
 
 std::vector <double> FONSETrace::getSelectionParameterTraceByMixtureElementForCodon(unsigned mixtureElement, std::string &codon)
 {
-	unsigned codonIndex = SequenceSummary::codonToIndex(codon, true);
+	CodonTable *ct = CodonTable::getInstance();
+	unsigned codonIndex = ct->codonToIndex(codon);
 	unsigned category = getSelectionCategory(mixtureElement);
 	return selectionParameterTrace[category][codonIndex];
 }
@@ -72,20 +74,21 @@ std::vector <double> FONSETrace::getSelectionParameterTraceByMixtureElementForCo
 void FONSETrace::updateCodonSpecificParameterTrace(unsigned sample, std::string aa, std::vector <std::vector <double> > &curMutParam,
 	std::vector <std::vector <double> > &curSelectParam)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	for (unsigned category = 0; category < mutationParameterTrace.size(); category++)
 	{
-		std::array <unsigned, 2> aaRange = SequenceSummary::AAToCodonRange(aa, true);
-		for (unsigned i = aaRange[0]; i < aaRange[1]; i++)
+		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+		for (unsigned i = 0; i < codonRange.size(); i++)
 		{
-			mutationParameterTrace[category][i][sample] = curMutParam[category][i];
+			mutationParameterTrace[category][codonRange[i]][sample] = curMutParam[category][codonRange[i]];
 		}
 	}
 	for (unsigned category = 0; category < selectionParameterTrace.size(); category++)
 	{
-		std::array <unsigned, 2> aaRange = SequenceSummary::AAToCodonRange(aa, true);
-		for (unsigned i = aaRange[0]; i < aaRange[1]; i++)
+		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+		for (unsigned i = 0; i < codonRange.size(); i++)
 		{
-			selectionParameterTrace[category][i][sample] = curSelectParam[category][i];
+			selectionParameterTrace[category][codonRange[i]][sample] = curSelectParam[category][codonRange[i]];
 		}
 	}
 }

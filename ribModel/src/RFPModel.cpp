@@ -41,6 +41,7 @@ void RFPModel::setParameter(RFPParameter &_parameter)
 void RFPModel::calculateLogLikelihoodRatioPerGene(Gene& gene, unsigned geneIndex, unsigned k, double* logProbabilityRatio)
 {
 
+	CodonTable *ct = CodonTable::getInstance();
 	double logLikelihood = 0.0;
 	double logLikelihood_proposed = 0.0;
 
@@ -52,12 +53,14 @@ void RFPModel::calculateLogLikelihoodRatioPerGene(Gene& gene, unsigned geneIndex
 	double phiValue = parameter->getSynthesisRate(geneIndex, synthesisRateCategory, false);
 	double phiValue_proposed = parameter->getSynthesisRate(geneIndex, synthesisRateCategory, true);
 
+	std::vector <std::string> groupList = ct->getGroupList();
+
 #ifndef __APPLE__
 #pragma omp parallel for reduction(+:logLikelihood,logLikelihood_proposed)
 #endif
-	for (int index = 0; index < getGroupListSize(); index++) //number of codons, without the stop codons
+	for (int index = 0; index < groupList.size(); index++) //number of codons, without the stop codons
 	{
-		std::string codon = getGrouping(index);
+		std::string codon = groupList[index];
 
 		double currAlpha = getParameterForCategory(alphaCategory, RFPParameter::alp, codon, false);
 		double currLambdaPrime = getParameterForCategory(lambdaPrimeCategory, RFPParameter::lmPri, codon, false);
@@ -84,11 +87,11 @@ void RFPModel::calculateLogLikelihoodRatioPerGene(Gene& gene, unsigned geneIndex
 
 void RFPModel::calculateLogLikelihoodRatioPerGroupingPerCategory(std::string grouping, Genome& genome, double& logAcceptanceRatioForAllMixtures)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	double logLikelihood = 0.0;
 	double logLikelihood_proposed = 0.0;
 	Gene *gene;
-	unsigned index = SequenceSummary::codonToIndex(grouping);
-
+	unsigned index = ct->codonToIndex(grouping);
 
 #ifndef __APPLE__
 #pragma omp parallel for private(gene) reduction(+:logLikelihood,logLikelihood_proposed)
@@ -180,7 +183,7 @@ void RFPModel::simulateGenome(Genome &genome)
 		Gene tmpGene = gene;
 		for (unsigned codonIndex = 0; codonIndex < 61; codonIndex++)
 		{
-			std::string codon = SequenceSummary::codonArray[codonIndex];
+			std::string codon = CodonTable::codonArray[codonIndex];
 			unsigned alphaCat = parameter -> getMutationCategory(mixtureElement);
 			unsigned lambdaPrimeCat = parameter -> getSelectionCategory(mixtureElement);
 

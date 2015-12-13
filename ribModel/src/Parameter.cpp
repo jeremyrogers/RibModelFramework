@@ -14,7 +14,6 @@ std::default_random_engine Parameter::generator( (unsigned) std::time(NULL));
 
 Parameter::Parameter()
 {
-	numParam = 0u;
 	phiGroupings = 0u;
 	Sphi.resize(1);
 	Sphi_proposed.resize(1);
@@ -25,31 +24,12 @@ Parameter::Parameter()
 	numSelectionCategories = 0u;
 	numMixtures = 0u;
 	std_sphi = 0.1;
-	maxGrouping = 22;
 }
-
-
-Parameter::Parameter(unsigned _maxGrouping)
-{
-	numParam = 0u;
-	phiGroupings = 0u;
-	Sphi.resize(1);
-	Sphi_proposed.resize(1);
-	numAcceptForSphi = 0u;
-	bias_sphi = 0.0;
-	bias_phi = 0.0;
-	numMutationCategories = 0u;
-	numSelectionCategories = 0u;
-	numMixtures = 0u;
-	std_sphi = 0.1;
-	maxGrouping = _maxGrouping;
-}
-
 
 Parameter& Parameter::operator=(const Parameter& rhs)
 {
 	if (this == &rhs) return *this; // handle self assignment
-	numParam = rhs.numParam;
+	ct = rhs.ct;
 
 	Sphi.resize(rhs.Sphi.size());
 	Sphi_proposed.resize(rhs.Sphi.size());
@@ -84,7 +64,6 @@ Parameter& Parameter::operator=(const Parameter& rhs)
   mutationSelectionState = rhs.mutationSelectionState;
   selectionIsInMixture = rhs.selectionIsInMixture;
   mutationIsInMixture = rhs.mutationIsInMixture;
-  maxGrouping = rhs.maxGrouping;
   groupList = rhs.groupList;
   mixtureAssignment = rhs.mixtureAssignment;
   categoryProbabilities = rhs.categoryProbabilities;
@@ -111,8 +90,8 @@ void Parameter::initParameterSet(std::vector<double> sphi, unsigned _numMixtures
 	}
 #endif
 
+	ct = CodonTable::getInstance();
 	mutationSelectionState = _mutationSelectionState;
-	numParam = ((splitSer) ? 40 : 41);
 	numMixtures = _numMixtures;
 	Sphi.resize(sphi.size());
 	Sphi_proposed.resize(sphi.size());
@@ -288,7 +267,6 @@ void Parameter::writeBasicRestartFile(std::string filename)
 		else oss <<" ";
 	}
 	if (i % 10 != 0) oss <<"\n";
-	oss <<">numParam:\n" << numParam <<"\n";
 	oss <<">numMixtures:\n" << numMixtures <<"\n";
 	oss <<">std_sphi:\n" << std_sphi <<"\n";
 	//maybe clear the buffer	
@@ -426,7 +404,6 @@ void Parameter::initBaseValuesFromFile(std::string filename)
 					Sphi.push_back(val);
 				}
 			}
-			else if (variableName == "numParam") {iss.str(tmp); iss >> numParam;}	
 			else if (variableName == "numMutationCategories") {iss.str(tmp); iss >> numMutationCategories;} 	
 			else if (variableName == "numSelectionCategories") {iss.str(tmp); iss >> numSelectionCategories;}	
 			else if (variableName == "numMixtures") {iss.str(tmp); iss >> numMixtures;}	
@@ -725,7 +702,7 @@ void Parameter::InitializeSynthesisRate(Genome& genome, double sd_phi)
 	for(unsigned i = 0u; i < genomeSize; i++)
 	{
 		index[i] = i;
-		scuoValues[i] = calculateSCUO( genome.getGene(i), 22 ); //This used to be maxGrouping, but RFP model will not work that way
+		scuoValues[i] = calculateSCUO( genome.getGene(i)); //This used to be maxGrouping, but RFP model will not work that way
 		expression[i] = Parameter::randLogNorm(-(sd_phi * sd_phi) / 2, sd_phi);
 	}
 	quickSortPair(scuoValues, index, 0, genomeSize);
@@ -826,39 +803,38 @@ unsigned Parameter::getEstimatedMixtureAssignment(unsigned samples, unsigned gen
 // Wan et al. CodonO: a new informatics method for measuring synonymous codon usage bias within and across genomes
 // International Journal of General Systems, Vol. 35, No. 1, February 2006, 109–125
 // http://www.tandfonline.com/doi/pdf/10.1080/03081070500502967
-double Parameter::calculateSCUO(Gene& gene, unsigned maxAA)
+double Parameter::calculateSCUO(Gene& gene)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	SequenceSummary seqsum = gene.getSequenceSummary();
+	std::vector <std::string> aaListing = ct->getGroupList();
 
 	double totalDegenerateAACount = 0.0;
-	for(unsigned i = 0; i < maxAA; i++)
+	for(unsigned i = 0; i < aaListing.size(); i++)
 	{
-		std::string curAA = seqsum.AminoAcidArray[i];
+		std::string curAA = aaListing[i];
 		// skip amino acids with only one codon or stop codons
-		if(curAA == "X" || curAA == "M" || curAA == "W") continue;
+		// TODO: fix this for groupList
 		totalDegenerateAACount += (double)seqsum.getAACountForAA(i);
 	}
 
 	double scuoValue = 0.0;
-	for(unsigned i = 0; i < maxAA; i++)
+	for(unsigned i = 0; i < aaListing.size(); i++)
 	{
-		std::string curAA = seqsum.AminoAcidArray[i];
+		std::string curAA = aaListing[i];
 		// skip amino acids with only one codon or stop codons
-		if(curAA == "X" || curAA == "M" || curAA == "W") continue;
-		double numDegenerateCodons = SequenceSummary::GetNumCodonsForAA(curAA);
+		unsigned numDegenerateCodons = ct->getNumCodonsForAA(curAA);
 
 		double aaCount = (double)seqsum.getAACountForAA(i);
 		if(aaCount == 0) continue;
 
-		std::array<unsigned, 2> codonRange = SequenceSummary::AAIndexToCodonRange(i, false);
+		std::vector <unsigned> codonRange = ct->AAIndexToCodonRange(i, false);
 
 		// calculate -sum(pij log(pij))
 		double aaEntropy = 0.0;
-		unsigned start = codonRange[0];
-		unsigned endd = codonRange[1];
-		for(unsigned k = start; k < endd; k++)
+		for(unsigned k = 0; k < codonRange.size(); k++)
 		{
-			int currCodonCount = seqsum.getCodonCountForCodon(k);
+			int currCodonCount = seqsum.getCodonCountForCodon(codonRange[k]);
 			if(currCodonCount == 0) continue;
 			double codonProportion = (double)currCodonCount / aaCount;
 			aaEntropy += codonProportion*std::log(codonProportion);
@@ -1147,34 +1123,4 @@ std::vector<double> Parameter::getCurrentSynthesisRateForMixture(unsigned mixtur
 		std::cerr << "WARNING: Mixture element " << mixture << " NOT found. Mixture element 1 is returned instead. \n";
 	}
 	return currentSynthesisRateLevel[exprCat];
-}
-
-void Parameter::setGroupList(std::vector <std::string> gl)
-{
-	groupList.clear();
-	for (unsigned i = 0; i < gl.size(); i++)
-	{
-		if (gl[i] == "M" || gl[i] == "W" || gl[i] == "X")
-		{
-			std::cerr << "Warning: Amino Acid" << gl[i] << "not recognized in ROC model\n";
-		}else{
-			groupList.push_back(gl[i]);
-		}
-	}
-}
-
-std::string Parameter::getGrouping(unsigned index)
-{
-	return groupList[index];
-}
-
-
-std::vector<std::string> Parameter::getGroupList()
-{
-	return groupList;
-}
-
-unsigned Parameter::getGroupListSize()
-{
-	return groupList.size();
 }

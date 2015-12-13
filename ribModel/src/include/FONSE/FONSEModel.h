@@ -72,8 +72,6 @@ class FONSEModel : public Model
 		{
 			parameter->getParameterForCategory(category, param, aa, proposal, returnValue);
 		}
-		virtual unsigned getGroupListSize() { return parameter->getGroupListSize(); } //TODO: make not hardcoded?
-		virtual std::string getGrouping(unsigned index) { return parameter->getGrouping(index); }
 		// R wrapper
 		std::vector<double> CalculateProbabilitiesForCodons(std::vector<double> mutation, std::vector<double> selection, double phi);
 

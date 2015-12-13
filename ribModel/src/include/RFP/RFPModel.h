@@ -165,11 +165,6 @@ class RFPModel: public Model {
 		{
 			return 61;
 		}
-		virtual std::string getGrouping(unsigned index)
-		{
-			return parameter->getGrouping(index);
-		}
-		virtual unsigned getGroupListSize() {return parameter->getGroupListSize();}
 
 
 		virtual void updateTmp() { parameter -> updateTmp();}

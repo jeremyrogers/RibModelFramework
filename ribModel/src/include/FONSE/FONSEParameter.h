@@ -38,6 +38,9 @@ class FONSEParameter : public Parameter
 		std::vector <double> propose(std::vector <double> currentParam, double(*proposal)(double a, double b), double A, std::vector <double> B);
 	public:
 
+		static const unsigned maxGrouping;
+		static const unsigned numParam;
+
 		static const unsigned dM;
 		static const unsigned dOmega;
 

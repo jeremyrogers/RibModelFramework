@@ -8,6 +8,7 @@
 #include <cctype>
 #include <vector>
 #include <array>
+#include "CodonTable.h"
 
 
 class SequenceSummary
@@ -16,21 +17,11 @@ class SequenceSummary
 
 		unsigned ncodons[64];
 		unsigned RFPObserved[64];
-		unsigned naa[22];
+		unsigned naa[26];
 		std::vector <std::vector <unsigned>> codonPositions;
 
 
 	public:
-
-		//Static member variables:
-		static const std::string Ser2;
-		static const std::vector<std::string> AminoAcidArray;
-		static const std::string codonArray[];
-		static const std::string codonArrayParameter[];
-		static const std::map<std::string, unsigned> aaToIndex;
-		static const std::map<std::string, unsigned> codonToIndexWithReference;
-		static const std::map<std::string, unsigned> codonToIndexWithoutReference;
-
 
 		//Constructors & destructors:
 		explicit SequenceSummary();
@@ -59,19 +50,8 @@ class SequenceSummary
 
 
 		//Static functions:
-		static unsigned AAToAAIndex(std::string aa);
-		static std::array<unsigned, 2> AAIndexToCodonRange(unsigned aaIndex, bool forParamVector = false);
-		static std::array<unsigned, 2> AAToCodonRange(std::string aa, bool forParamVector = false);
-		static std::vector<std::string> AAToCodon(std::string aa, bool forParamVector = false);
-		static std::string codonToAA(std::string& codon);
-		static unsigned codonToIndex(std::string& codon, bool forParamVector = false);
-		static unsigned codonToAAIndex(std::string& codon);
-		static std::string indexToAA(unsigned aaIndex);
-		static std::string indexToCodon(unsigned index, bool forParamVector = false);
-		static unsigned GetNumCodonsForAA(std::string& aa, bool forParamVector = false);
 		static char complimentNucleotide(char ch);
-		static std::vector<std::string> aminoAcids();
-		static std::vector<std::string> codons();
+
 
 
 

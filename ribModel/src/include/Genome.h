@@ -6,6 +6,8 @@
 #include <map>
 
 #include "Gene.h"
+#include "CodonTable.h"
+
 
 
 class Model;
@@ -19,10 +21,12 @@ class Genome
 		std::vector<Gene> simulatedGenes;
 		std::vector <unsigned> numGenesWithPhi;
 
+		static std::vector <std::string> defaultVector;
+
 	public:
 
 		//Constructors & destructors:
-		explicit Genome();
+		explicit Genome(unsigned codonTableId = 1, std::string model = "ROC", bool splitAA = true, std::vector <std::string> = defaultVector);
 		virtual ~Genome();
 		Genome& operator=(const Genome& other);
 
