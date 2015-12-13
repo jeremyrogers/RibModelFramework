@@ -28,7 +28,7 @@ ROCParameter::ROCParameter(std::string filename) :
 }
 
 #ifndef STANDALONE
-ROCParameter::ROCParameter(double sphi, std::vector<unsigned> geneAssignment, std::vector<unsigned> _matrix, bool splitSer) : Parameter(maxGrouping)
+ROCParameter::ROCParameter(double sphi, std::vector<unsigned> geneAssignment, std::vector<unsigned> _matrix, bool splitSer) : Parameter()
 {
 	unsigned _numMixtures = _matrix.size() / 2;
 	std::vector<std::vector<unsigned>> thetaKMatrix;
@@ -48,7 +48,7 @@ ROCParameter::ROCParameter(double sphi, std::vector<unsigned> geneAssignment, st
 }
 
 ROCParameter::ROCParameter(double sphi, unsigned _numMixtures, std::vector<unsigned> geneAssignment, bool splitSer, std::string _mutationSelectionState) :
-Parameter(26)
+Parameter()
 {
 	std::vector<std::vector<unsigned>> thetaKMatrix;
 	initParameterSet(sphi, _numMixtures, geneAssignment, thetaKMatrix, splitSer, _mutationSelectionState);
@@ -460,7 +460,7 @@ void ROCParameter::initROCValuesFromFile(std::string filename)
 #ifndef STANDALONE
 SEXP ROCParameter::calculateSelectionCoefficientsR(unsigned sample, unsigned mixture)
 {
-	NumericMatrix RSelectionCoefficents(mixtureAssignment.size(), 62); //62 due to stop codons
+	NumericMatrix RSelectionCoefficents(mixtureAssignment.size(), 64); //62 due to stop codons
 	std::vector<std::vector<double>> selectionCoefficients;
 	bool checkMixture = checkIndex(mixture, 1, numMixtures);
 	if (checkMixture)
@@ -484,12 +484,13 @@ SEXP ROCParameter::calculateSelectionCoefficientsR(unsigned sample, unsigned mix
 using namespace Rcpp;
 void ROCParameter::initCovarianceMatrix(SEXP _matrix, std::string aa)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	std::vector<double> tmp;
 	NumericMatrix matrix(_matrix);
 
 	for(unsigned i = 0u; i < aa.length(); i++)	aa[i] = (char)std::toupper(aa[i]);
 
-	unsigned aaIndex = SequenceSummary::aaToIndex.find(aa) -> second;
+	unsigned aaIndex = ct->AAToAAIndex(aa);
 	unsigned numRows = matrix.nrow();
 	std::vector<double> covMatrix(numRows * numRows);
 

@@ -227,7 +227,6 @@ std::string CodonTable::indexToAA(unsigned aaIndex)
 //-----------------------------------//
 void CodonTable::setupCodonTable()
 {
-	unsigned numAA = groupList.size();
 	std::vector <unsigned> codonIndices;
 	std::vector <std::string> codons;
 
@@ -1908,16 +1907,19 @@ RCPP_MODULE(CodonTable_mod)
 {
 	class_<CodonTable>( "CodonTable" )
 		.constructor("Empty constructor - sets to codon table 1 and that amino acids should be split.")
-		.constructor<unsigned, bool>("Indicate what codon table to use and if amino acids should be split.")
+		.constructor<unsigned, std::string, bool, std::vector<std::string> >("Indicate what codon table to use and if amino acids should be split.")
 
         //Getter functions:
 		.method("getTableId", &CodonTable::getTableIdR)
 		.method("getSplitAA", &CodonTable::getSplitAA)
-        .method("getAAListing", &CodonTable::getAAListing)
-        .method("getCodonToAAMap", &CodonTable::getCodonToAAMap)
-        .method("getAAMap", &CodonTable::getAAMapR)
-        .method("getAAToNumCodonsMap", &CodonTable::getAAToNumCodonsMap)
-        .method("getForParamVectorMap", &CodonTable::getForParamVectorMapR)
+	//	.method("getAAToCodonMap" &CodonTable::getAAToCodonMap)
+	//	.method("getAAToCodonIndexMap" &CodonTable::getAAToCodonIndexMap)
+	//	.method("getAAToCodonMapWithoutReference", &CodonTable::getAAToCodonMapWithoutReference)
+	//	.method("getAAToCodonIndexMapWithoutReference", &CodonTable::getAAToCodonIndexMapWithoutReference)
+    //    .method("getCodonToAAMap", &CodonTable::getCodonToAAMap)
+    //    .method("getAAMap", &CodonTable::getAAMapR)
+    //    .method("getAAToNumCodonsMap", &CodonTable::getAAToNumCodonsMap)
+		.method("getGroupList", &CodonTable::getGroupList)
 
         .method("getNumCodonsForAA", &CodonTable::getNumCodonsForAA)
         .method("getNumCodonsForAAIndex", &CodonTable::getNumCodonsForAAIndexR)

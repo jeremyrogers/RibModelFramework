@@ -375,7 +375,7 @@ void FONSEParameter::initFONSEValuesFromFile(std::string filename)
 #ifndef STANDALONE
 SEXP FONSEParameter::calculateSelectionCoefficientsR(unsigned sample, unsigned mixture)
 {
-	NumericMatrix RSelectionCoefficents(mixtureAssignment.size(), 62); //62 due to stop codons
+	NumericMatrix RSelectionCoefficents(mixtureAssignment.size(), 64); //62 due to stop codons
 	std::vector<std::vector<double>> selectionCoefficients;
 	bool checkMixture = checkIndex(mixture, 1, numMixtures);
 	if (checkMixture)
@@ -395,12 +395,13 @@ SEXP FONSEParameter::calculateSelectionCoefficientsR(unsigned sample, unsigned m
 
 void FONSEParameter::initCovarianceMatrix(SEXP _matrix, std::string aa)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	std::vector<double> tmp;
 	NumericMatrix matrix(_matrix);
 
 	for (unsigned i = 0u; i < aa.length(); i++)	aa[i] = (char)std::toupper(aa[i]);
 
-	unsigned aaIndex = SequenceSummary::aaToIndex.find(aa)->second;
+	unsigned aaIndex = ct->AAToAAIndex(aa);
 	unsigned numRows = matrix.nrow();
 	std::vector<double> covMatrix(numRows * numRows);
 
