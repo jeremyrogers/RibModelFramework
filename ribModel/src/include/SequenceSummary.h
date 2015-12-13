@@ -17,7 +17,7 @@ class SequenceSummary
 
 		unsigned ncodons[64];
 		unsigned RFPObserved[64];
-		unsigned naa[22];
+		unsigned naa[26];
 		std::vector <std::vector <unsigned>> codonPositions;
 
 

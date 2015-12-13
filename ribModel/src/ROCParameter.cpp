@@ -578,7 +578,7 @@ void ROCParameter::initMutationCategories(std::vector<std::string> files, unsign
 			//Get the Codon and Index
 			std::size_t pos = tmp.find(",", 2); //Amino Acid and a comma will always be the first 2 characters
 			std::string codon = tmp.substr(2, pos - 2);
-			unsigned codonIndex = ct->codonToIndex(codon, true);
+			unsigned codonIndex = ct->codonToIndex(codon);
 
 			//get the value to store
 			std::size_t pos2 = tmp.find(",", pos + 1);
@@ -614,7 +614,7 @@ void ROCParameter::initSelectionCategories(std::vector<std::string> files, unsig
 			//Get the Codon and Index
 			std::size_t pos = tmp.find(",", 2); //Amino Acid and a comma will always be the first 2 characters
 			std::string codon = tmp.substr(2, pos - 2);
-			unsigned codonIndex = ct->codonToIndex(codon, true);
+			unsigned codonIndex = ct->codonToIndex(codon);
 
 			//get the value to store
 			std::size_t pos2 = tmp.find(",", pos + 1);

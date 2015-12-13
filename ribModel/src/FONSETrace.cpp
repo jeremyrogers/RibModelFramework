@@ -58,7 +58,7 @@ void FONSETrace::initSelectionParameterTrace(unsigned samples, unsigned numSelec
 std::vector <double> FONSETrace::getMutationParameterTraceByMixtureElementForCodon(unsigned mixtureElement, std::string &codon)
 {
 	CodonTable *ct = CodonTable::getInstance();
-	unsigned codonIndex = ct->codonToIndex(codon, true);
+	unsigned codonIndex = ct->codonToIndex(codon);
 	unsigned category = getMutationCategory(mixtureElement);
 	return mutationParameterTrace[category][codonIndex];
 }
@@ -66,7 +66,7 @@ std::vector <double> FONSETrace::getMutationParameterTraceByMixtureElementForCod
 std::vector <double> FONSETrace::getSelectionParameterTraceByMixtureElementForCodon(unsigned mixtureElement, std::string &codon)
 {
 	CodonTable *ct = CodonTable::getInstance();
-	unsigned codonIndex = ct->codonToIndex(codon, true);
+	unsigned codonIndex = ct->codonToIndex(codon);
 	unsigned category = getSelectionCategory(mixtureElement);
 	return selectionParameterTrace[category][codonIndex];
 }

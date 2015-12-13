@@ -148,7 +148,7 @@ void RFPParameter::initMutationSelectionCategories(std::vector<std::string> file
 			std::string codon = tmpString.substr(0, 3);
 			std::size_t pos = tmpString.find(",", 3);
 			std::string val = tmpString.substr(pos + 1, std::string::npos);
-			unsigned index = ct->codonToIndex(codon, false);
+			unsigned index = ct->codonToIndex(codon);
 			temp[index] = std::atof(val.c_str());
 		}
 		unsigned altered = 0u;

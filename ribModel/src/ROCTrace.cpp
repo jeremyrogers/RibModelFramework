@@ -79,7 +79,7 @@ void ROCTrace::initSepsilonTrace(unsigned samples, unsigned numPhiGroupings)
 std::vector<double> ROCTrace::getMutationParameterTraceByMixtureElementForCodon(unsigned mixtureElement, std::string& codon)
 {
 	CodonTable *ct = CodonTable::getInstance();
-	unsigned codonIndex = ct->codonToIndex(codon, true);
+	unsigned codonIndex = ct->codonToIndex(codon);
 	unsigned category = getMutationCategory(mixtureElement);
 	return mutationParameterTrace[category][codonIndex];
 }
@@ -88,7 +88,7 @@ std::vector<double> ROCTrace::getMutationParameterTraceByMixtureElementForCodon(
 std::vector<double> ROCTrace::getSelectionParameterTraceByMixtureElementForCodon(unsigned mixtureElement, std::string& codon)
 {
 	CodonTable *ct = CodonTable::getInstance();
-	unsigned codonIndex = ct->codonToIndex(codon, true);
+	unsigned codonIndex = ct->codonToIndex(codon);
 	unsigned category = getSelectionCategory(mixtureElement);
 	return selectionParameterTrace[category][codonIndex];
 }

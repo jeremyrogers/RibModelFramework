@@ -428,7 +428,7 @@ int main()
 		//testReadMutationValues();
 		//testGeneSequenceSummary();
 		//testReadMutationValues();
-		testMultiplePhi();
+		//testMultiplePhi();
 	}
 	else //not doing unit testing, running a model
 	{

@@ -23,13 +23,11 @@ class CodonTable
 		std::map <std::string, std::vector <unsigned>> AAToCodonIndexMap;
 		std::map <std::string, std::vector <std::string>> AAToCodonMapWithoutReference;
 		std::map <std::string, std::vector <unsigned>> AAToCodonIndexMapWithoutReference;
-        //std::vector <std::string> forParamVectorListing; //List of all codons without the last codon in every AA group.
         std::map <std::string, std::string> codonToAAMap; //Maps ALL codons for current conditions to AAs.
         std::map <std::string, unsigned> AAMap; //Maps currently used AAs to indices.
         std::map <std::string, unsigned> AAToNumCodonsMap;
         //Maps currently used AAs to the number of codons that code for them.
 
-        std::map <std::string, unsigned> forParamVectorMap;
         //Maps codons to indices (not including last in each AA grouping).
 		std::vector <std::string> groupList;
 
@@ -37,6 +35,7 @@ class CodonTable
 		const static std::vector <std::vector <std::string> > defaultSplitAAGroupListings;
 
 		const static std::vector <std::vector <std::vector <std::string> > > codonTableListing;
+		const static std::vector <std::vector <std::vector <std::string> > > codonTableListingWithoutSplit;
 
     public:
 
@@ -52,11 +51,15 @@ class CodonTable
         //Getter functions:
         unsigned getTableId();
         bool getSplitAA();
+		std::map <std::string, std::vector <std::string>> getAAToCodonMap();
+		std::map <std::string, std::vector <unsigned>> getAAToCodonIndexMap();
+		std::map <std::string, std::vector <std::string>> getAAToCodonMapWithoutReference();
+		std::map <std::string, std::vector <unsigned>> getAAToCodonIndexMapWithoutReference();
         std::map <std::string, std::string> getCodonToAAMap(); //Maps ALL codons for current conditions to AAs.
+		std::map <std::string, unsigned> getAAMap(); //Maps currently used AAs to indices.
+		std::map <std::string, unsigned> getAAToNumCodonsMap();
 		std::vector <std::string> getGroupList();
-        std::map <std::string, unsigned> getAAMap(); //Maps currently used AAs to indices.
-        std::map <std::string, unsigned> getAAToNumCodonsMap();
-        std::map <std::string, unsigned> getForParamVectorMap();
+        
 
         unsigned getNumCodonsForAA(std::string aa, bool forParamVector = false);
         unsigned getNumCodonsForAAIndex(unsigned aaIndex, bool forParamVector = false);
@@ -70,7 +73,7 @@ class CodonTable
         std::vector <unsigned> AAToCodonRange(std::string aa, bool forParamVector = false);
         std::vector<std::string> AAToCodon(std::string aa, bool forParamVector = false);
         std::string codonToAA(std::string& codon);
-        unsigned codonToIndex(std::string& codon, bool forParamVector = false);
+        unsigned codonToIndex(std::string& codon);
         unsigned codonToAAIndex(std::string& codon);
         std::string indexToAA(unsigned aaIndex);
 
@@ -125,7 +128,7 @@ class CodonTable
         std::vector <unsigned> AAToCodonRangeR(std::string aa, bool forParamVector = false);
         std::vector<std::string> AAToCodonR(std::string aa, bool forParamVector = false);
         std::string codonToAAR(std::string& codon);
-        unsigned codonToIndexR(std::string& codon, bool forParamVector = false);
+        unsigned codonToIndexR(std::string& codon);
         unsigned codonToAAIndexR(std::string& codon);
         std::string indexToAAR(unsigned aaIndex);
 
