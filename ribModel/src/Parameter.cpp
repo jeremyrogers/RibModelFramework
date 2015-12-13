@@ -12,7 +12,6 @@ std::default_random_engine Parameter::generator( (unsigned) std::time(NULL));
 
 Parameter::Parameter()
 {
-	numParam = 0u;
 	phiGroupings = 0u;
 	Sphi = 0.1;
 	Sphi_proposed = 0.0;
@@ -23,31 +22,11 @@ Parameter::Parameter()
 	numSelectionCategories = 0u;
 	numMixtures = 0u;
 	std_sphi = 0.1;
-	maxGrouping = 22;
 }
-
-
-Parameter::Parameter(unsigned _maxGrouping)
-{
-	numParam = 0u;
-	phiGroupings = 0u;
-	Sphi = 0.1;
-	Sphi_proposed = 0.0;
-	numAcceptForSphi = 0u;
-	bias_sphi = 0.0;
-	bias_phi = 0.0;
-	numMutationCategories = 0u;
-	numSelectionCategories = 0u;
-	numMixtures = 0u;
-	std_sphi = 0.1;
-	maxGrouping = _maxGrouping;
-}
-
 
 Parameter& Parameter::operator=(const Parameter& rhs)
 {
   if (this == &rhs) return *this; // handle self assignment
-  numParam = rhs.numParam;
   ct = rhs.ct;
 
   Sphi = rhs.Sphi;
@@ -77,7 +56,6 @@ Parameter& Parameter::operator=(const Parameter& rhs)
   mutationSelectionState = rhs.mutationSelectionState;
   selectionIsInMixture = rhs.selectionIsInMixture;
   mutationIsInMixture = rhs.mutationIsInMixture;
-  maxGrouping = rhs.maxGrouping;
   groupList = rhs.groupList;
   mixtureAssignment = rhs.mixtureAssignment;
   categoryProbabilities = rhs.categoryProbabilities;
@@ -106,7 +84,6 @@ void Parameter::initParameterSet(double sphi, unsigned _numMixtures, std::vector
 
 	ct = CodonTable::getInstance();
 	mutationSelectionState = _mutationSelectionState;
-	numParam = ((splitSer) ? 40 : 41);
 	numMixtures = _numMixtures;
 
 	Sphi = sphi;
@@ -271,7 +248,6 @@ void Parameter::writeBasicRestartFile(std::string filename)
 	}
 	if (i % 10 != 0) oss << "\n";
 	oss <<">Sphi:\n" << Sphi <<"\n";
-	oss <<">numParam:\n" << numParam <<"\n";
 	oss <<">numMixtures:\n" << numMixtures <<"\n";
 	oss <<">std_sphi:\n" << std_sphi <<"\n";
 	//maybe clear the buffer	
@@ -401,7 +377,6 @@ void Parameter::initBaseValuesFromFile(std::string filename)
 				}
 			} 
 			else if (variableName == "Sphi") {iss.str(tmp); iss >> Sphi;}
-			else if (variableName == "numParam") {iss.str(tmp); iss >> numParam;}	
 			else if (variableName == "numMutationCategories") {iss.str(tmp); iss >> numMutationCategories;} 	
 			else if (variableName == "numSelectionCategories") {iss.str(tmp); iss >> numSelectionCategories;}	
 			else if (variableName == "numMixtures") {iss.str(tmp); iss >> numMixtures;}	
@@ -700,7 +675,7 @@ void Parameter::InitializeSynthesisRate(Genome& genome, double sd_phi)
 	for(unsigned i = 0u; i < genomeSize; i++)
 	{
 		index[i] = i;
-		scuoValues[i] = calculateSCUO( genome.getGene(i), 22 ); //This used to be maxGrouping, but RFP model will not work that way
+		scuoValues[i] = calculateSCUO( genome.getGene(i)); //This used to be maxGrouping, but RFP model will not work that way
 		expression[i] = Parameter::randLogNorm(-(sd_phi * sd_phi) / 2, sd_phi);
 	}
 	quickSortPair(scuoValues, index, 0, genomeSize);
@@ -797,7 +772,7 @@ unsigned Parameter::getEstimatedMixtureAssignment(unsigned samples, unsigned gen
 // Wan et al. CodonO: a new informatics method for measuring synonymous codon usage bias within and across genomes
 // International Journal of General Systems, Vol. 35, No. 1, February 2006, 109–125
 // http://www.tandfonline.com/doi/pdf/10.1080/03081070500502967
-double Parameter::calculateSCUO(Gene& gene, unsigned maxAA)
+double Parameter::calculateSCUO(Gene& gene)
 {
 	CodonTable *ct = CodonTable::getInstance();
 	SequenceSummary seqsum = gene.getSequenceSummary();
@@ -809,7 +784,6 @@ double Parameter::calculateSCUO(Gene& gene, unsigned maxAA)
 		std::string curAA = aaListing[i];
 		// skip amino acids with only one codon or stop codons
 		// TODO: fix this for groupList
-		if(curAA == "X" || curAA == "M" || curAA == "W") continue;
 		totalDegenerateAACount += (double)seqsum.getAACountForAA(i);
 	}
 
@@ -818,7 +792,6 @@ double Parameter::calculateSCUO(Gene& gene, unsigned maxAA)
 	{
 		std::string curAA = aaListing[i];
 		// skip amino acids with only one codon or stop codons
-		if(curAA == "X" || curAA == "M" || curAA == "W") continue;
 		unsigned numDegenerateCodons = ct->getNumCodonsForAA(curAA);
 
 		double aaCount = (double)seqsum.getAACountForAA(i);

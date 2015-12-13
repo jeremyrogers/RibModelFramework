@@ -134,8 +134,18 @@ std::map <std::string, unsigned> CodonTable::getAAToNumCodonsMap()
 
 unsigned CodonTable::getNumCodonsForAA(std::string aa, bool forParamVector)
 {
+	unsigned rv;
     unsigned numCodons = AAToNumCodonsMap.find(aa) -> second;
-    return forParamVector ? numCodons - 1 : numCodons;
+
+	if (numCodons == 0)
+	{
+		rv = 0;
+	}
+	else
+	{
+		rv = forParamVector ? numCodons - 1 : numCodons;
+	}
+	return rv;
 }
 
 
@@ -157,7 +167,7 @@ unsigned CodonTable::AAToAAIndex(std::string aa)
 
 std::vector <unsigned> CodonTable::AAIndexToCodonRange(unsigned aaIndex, bool forParamVector)
 {
-    return forParamVector ? AAToCodonIndexMapWithoutReference.find(groupList[aaIndex])->second : AAToCodonIndexMap.find(groupList[aaIndex])->second;
+    return forParamVector ? AAToCodonIndexMapWithoutReference.find(aminoAcidArray[aaIndex])->second : AAToCodonIndexMap.find(aminoAcidArray[aaIndex])->second;
 }
 
 
@@ -207,7 +217,7 @@ unsigned CodonTable::codonToAAIndex(std::string& codon)
 
 std::string CodonTable::indexToAA(unsigned aaIndex)
 {
-    return groupList[aaIndex];
+    return aminoAcidArray[aaIndex];
 }
 
 
@@ -261,7 +271,7 @@ void CodonTable::setupCodonTable()
 		codons.resize(0);
 	}
 
-	for (unsigned groupIndex = 0; groupIndex < fullAAMap.size(); groupIndex++) {
+	for (unsigned groupIndex = 0; groupIndex < aminoAcidArray.size(); groupIndex++) {
 		std::string AA = aminoAcidArray[groupIndex];
 		std::vector <std::string> codonList = AAToCodonMap.find(AA)->second;
 		for (unsigned codonIndex = 0; codonIndex < codonList.size(); codonIndex++) {

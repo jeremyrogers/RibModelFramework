@@ -9,6 +9,8 @@
 using namespace Rcpp;
 #endif
 
+const unsigned RFPParameter::maxGrouping = 64;
+const unsigned RFPParameter::numParam = 61;
 
 RFPParameter::RFPParameter() : Parameter()
 {
@@ -16,15 +18,14 @@ RFPParameter::RFPParameter() : Parameter()
 }
 
 
-RFPParameter::RFPParameter(std::string filename) : Parameter(64)
+RFPParameter::RFPParameter(std::string filename) : Parameter()
 {
 	initFromRestartFile(filename);
-	numParam = 61;
 }
 
 
 RFPParameter::RFPParameter(double sphi, unsigned _numMixtures, std::vector<unsigned> geneAssignment, std::vector<std::vector<unsigned>> thetaKMatrix, 
-		bool splitSer, std::string _mutationSelectionState) : Parameter(64)
+		bool splitSer, std::string _mutationSelectionState) : Parameter()
 {
 	initParameterSet(sphi, _numMixtures, geneAssignment, thetaKMatrix, splitSer, _mutationSelectionState);
 	initRFPParameterSet();
@@ -70,7 +71,6 @@ void RFPParameter::initRFPParameterSet()
 	currentLambdaPrimeParameter.resize(lambdaPrimeCategories);
 	proposedLambdaPrimeParameter.resize(lambdaPrimeCategories);
 	lambdaValues.resize(lambdaPrimeCategories);
-	numParam = 61;
 
 	for (unsigned i = 0; i < alphaCategories; i++)
 	{

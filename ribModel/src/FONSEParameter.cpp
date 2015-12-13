@@ -16,19 +16,21 @@ using namespace Rcpp;
 
 const unsigned FONSEParameter::dM = 0;
 const unsigned FONSEParameter::dOmega = 1;
+const unsigned FONSEParameter::numParam = 64;
+const unsigned FONSEParameter::maxGrouping = 26;
 
 FONSEParameter::FONSEParameter() : Parameter()
 {
 }
 
-FONSEParameter::FONSEParameter(std::string filename) : Parameter(22)
+FONSEParameter::FONSEParameter(std::string filename) : Parameter()
 {
 	initFromRestartFile(filename);
 }
 
 #ifndef STANDALONE
 FONSEParameter::FONSEParameter(double sphi, std::vector<unsigned> geneAssignment, std::vector<unsigned> _matrix, bool splitSer) 
-	: Parameter(22)
+	: Parameter()
 {
 	unsigned _numMixtures = _matrix.size() / 2;
 	std::vector<std::vector<unsigned>> thetaKMatrix;
@@ -48,7 +50,7 @@ FONSEParameter::FONSEParameter(double sphi, std::vector<unsigned> geneAssignment
 }
 
 FONSEParameter::FONSEParameter(double sphi, unsigned _numMixtures, std::vector<unsigned> geneAssignment, bool splitSer, std::string _mutationSelectionState)
-	: Parameter(22)
+	: Parameter()
 {
 	std::vector<std::vector<unsigned>> thetaKMatrix;
 	initParameterSet(sphi, _numMixtures, geneAssignment, thetaKMatrix, splitSer, _mutationSelectionState);
@@ -58,7 +60,7 @@ FONSEParameter::FONSEParameter(double sphi, unsigned _numMixtures, std::vector<u
 
 FONSEParameter::FONSEParameter(double sphi, unsigned _numMixtures, std::vector<unsigned> geneAssignment,
 	std::vector<std::vector<unsigned>> thetaKMatrix, bool splitSer, std::string _mutationSelectionState) :
-	Parameter(22)
+	Parameter()
 {
 	initParameterSet(sphi, _numMixtures, geneAssignment, thetaKMatrix, splitSer, _mutationSelectionState);
 	initFONSEParameterSet();
@@ -357,7 +359,7 @@ void FONSEParameter::initFONSEValuesFromFile(std::string filename)
 	phiEpsilon = 0.1;
 	phiEpsilon_proposed = 0.1;
 	bias_csp = 0;
-	numAcceptForMutationAndSelection.resize(22, 0u);
+	numAcceptForMutationAndSelection.resize(maxGrouping, 0u);
 	proposedMutationParameter.resize(numMutationCategories);
 	proposedSelectionParameter.resize(numSelectionCategories);
 	for (unsigned i = 0; i < numMutationCategories; i++)
@@ -368,9 +370,6 @@ void FONSEParameter::initFONSEValuesFromFile(std::string filename)
 	{
 		proposedSelectionParameter[i] = currentSelectionParameter[i];
 	}
-
-	groupList = { "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R", "S", "T", "V", "Y", "Z" };
-	//groupList = { "C", "D", "E", "F", "H", "K", "M", "N", "Q", "W", "Y" };
 }
 
 #ifndef STANDALONE

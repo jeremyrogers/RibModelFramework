@@ -39,6 +39,10 @@ class RFPParameter: public Parameter {
 
 
 	public:
+
+		static const unsigned maxGrouping;
+		static const unsigned numParam;
+
 		//Constructors & destructors:
 		explicit RFPParameter();
 		RFPParameter(std::string filename);

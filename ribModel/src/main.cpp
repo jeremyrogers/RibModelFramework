@@ -23,7 +23,7 @@ void testSCUO(Genome& genome)
 	std::cout << "------------------ SCUO VALUES ------------------" << std::endl;
 	for (unsigned n = 0u; n < genome.getGenomeSize(); n++)
 	{
-		std::cout << genome.getGene(n).getId() << "\t" << Parameter::calculateSCUO(genome.getGene(n), 22) << std::endl;
+		std::cout << genome.getGene(n).getId() << "\t" << Parameter::calculateSCUO(genome.getGene(n)) << std::endl;
 	}
 	std::cout << "------------------ SCUO VALUES ------------------" << std::endl;
 }
@@ -580,7 +580,7 @@ int main()
 			std::ofstream scuoout("results/scuo.csv");
 			for (unsigned n = 0u; n < genome.getGenomeSize(); n++)
 			{
-				scuoout << genome.getGene(n).getId() << "," << parameter.calculateSCUO(genome.getGene(n), 22) << std::endl;
+				scuoout << genome.getGene(n).getId() << "," << parameter.calculateSCUO(genome.getGene(n)) << std::endl;
 			}
 			scuoout.close();
 			std::cout <<"Done initializing ROCModel object\n";
@@ -702,7 +702,7 @@ int main()
 			std::ofstream scuoout("results/scuo.csv");
 			for (unsigned n = 0u; n < genome.getGenomeSize(); n++)
 			{
-				scuoout << genome.getGene(n).getId() << "," << parameter.calculateSCUO(genome.getGene(n), 22) << std::endl;
+				scuoout << genome.getGene(n).getId() << "," << parameter.calculateSCUO(genome.getGene(n)) << std::endl;
 			}
 			scuoout.close();
 			std::cout << "Done initializing FONSEModel object\n";

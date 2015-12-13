@@ -38,6 +38,9 @@ class FONSEParameter : public Parameter
 
 	public:
 
+		static const unsigned maxGrouping;
+		static const unsigned numParam;
+
 		static const unsigned dM;
 		static const unsigned dOmega;
 

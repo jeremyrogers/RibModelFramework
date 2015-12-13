@@ -13,6 +13,8 @@ using namespace Rcpp;
 
 const unsigned ROCParameter::dM = 0;
 const unsigned ROCParameter::dEta = 1;
+const unsigned ROCParameter::maxGrouping = 26;
+const unsigned ROCParameter::numParam = 64;
 
 ROCParameter::ROCParameter() : Parameter()
 {
@@ -20,13 +22,13 @@ ROCParameter::ROCParameter() : Parameter()
 
 
 ROCParameter::ROCParameter(std::string filename) :
-		Parameter(22)
+		Parameter()
 {
 	initFromRestartFile(filename);
 }
 
 #ifndef STANDALONE
-ROCParameter::ROCParameter(double sphi, std::vector<unsigned> geneAssignment, std::vector<unsigned> _matrix, bool splitSer) : Parameter(22)
+ROCParameter::ROCParameter(double sphi, std::vector<unsigned> geneAssignment, std::vector<unsigned> _matrix, bool splitSer) : Parameter(maxGrouping)
 {
 	unsigned _numMixtures = _matrix.size() / 2;
 	std::vector<std::vector<unsigned>> thetaKMatrix;
@@ -46,7 +48,7 @@ ROCParameter::ROCParameter(double sphi, std::vector<unsigned> geneAssignment, st
 }
 
 ROCParameter::ROCParameter(double sphi, unsigned _numMixtures, std::vector<unsigned> geneAssignment, bool splitSer, std::string _mutationSelectionState) :
-Parameter(22)
+Parameter(26)
 {
 	std::vector<std::vector<unsigned>> thetaKMatrix;
 	initParameterSet(sphi, _numMixtures, geneAssignment, thetaKMatrix, splitSer, _mutationSelectionState);
@@ -56,7 +58,7 @@ Parameter(22)
 
 ROCParameter::ROCParameter(double sphi, unsigned _numMixtures, std::vector<unsigned> geneAssignment,
 		std::vector<std::vector<unsigned>> thetaKMatrix, bool splitSer, std::string _mutationSelectionState) :
-		Parameter(22)
+		Parameter()
 {
 	initParameterSet(sphi, _numMixtures, geneAssignment, thetaKMatrix, splitSer, _mutationSelectionState);
 	initROCParameterSet();
@@ -99,10 +101,9 @@ ROCParameter& ROCParameter::operator=(const ROCParameter& rhs)
 
 void ROCParameter::initROCParameterSet()
 {
-	groupList = {"A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R", "S", "T", "V", "Y", "Z"};
 	// proposal bias and std for codon specific parameter
 	bias_csp = 0;
-	std_csp.resize(numParam, 0.1);
+	std_csp.resize(64, 0.1);
 	numAcceptForMutationAndSelection.resize(maxGrouping, 0u);
 
 	phiEpsilon = 0.1;
@@ -121,7 +122,7 @@ void ROCParameter::initROCParameterSet()
 
 	for (unsigned i = 0u; i < numMutationCategories; i++)
 	{
-		std::vector<double> tmp(numParam, 0.0);
+		std::vector<double> tmp(64, 0.0);
 		currentMutationParameter[i] = tmp;
 		proposedMutationParameter[i] = tmp;
 	}
@@ -131,21 +132,21 @@ void ROCParameter::initROCParameterSet()
 
 	for (unsigned i = 0u; i < numSelectionCategories; i++)
 	{
-		std::vector<double> tmp(numParam, 0.0);
+		std::vector<double> tmp(64, 0.0);
 		proposedSelectionParameter[i] = tmp;
 		currentSelectionParameter[i] = tmp;
 	}
-	std::vector <std::string> aaListing = ct->getGroupList();
+	std::vector <std::string> aaListing = ct->aminoAcidArray;
 
+	covarianceMatrix.resize(26);
   for (unsigned i = 0; i < aaListing.size(); i++)
   {
     std::string aa = ct->indexToAA(i);
 	// BUG: OH GOD
-	//if (aa == "M" || aa == "X" || aa == "W") continue;
     unsigned numCodons = ct->getNumCodonsForAA(aa, true);
     CovarianceMatrix m((numMutationCategories + numSelectionCategories) * numCodons);
     m.choleskiDecomposition();
-    covarianceMatrix.push_back(m);
+    covarianceMatrix[i] = m;
   }
 
 
@@ -442,7 +443,7 @@ void ROCParameter::initROCValuesFromFile(std::string filename)
 	phiEpsilon = 0.1;
 	phiEpsilon_proposed = 0.1;
 	bias_csp = 0;
-	numAcceptForMutationAndSelection.resize(22, 0u);
+	numAcceptForMutationAndSelection.resize(maxGrouping, 0u);
 	proposedMutationParameter.resize(numMutationCategories);
 	proposedSelectionParameter.resize(numSelectionCategories);
 	for (unsigned i = 0; i < numMutationCategories; i++)
@@ -1069,7 +1070,6 @@ void ROCParameter::proposeCodonSpecificParameter()
 	{
 		std::vector<double> iidProposed;
 		std::string aa = aaListing[k];
-		//if (aa == "X" || aa == "W" || aa == "M") continue;
 		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
 		unsigned numCodons = codonRange.size();
 		for (unsigned i = 0u; i < numCodons * (numMutationCategories + numSelectionCategories); i++)
