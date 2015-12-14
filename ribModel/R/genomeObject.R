@@ -1,7 +1,7 @@
 
 initializeGenomeObject <- function(file, fasta=TRUE, expression.file=NULL, append=FALSE)
 {
-  genome <- new(Genome)
+  genome <- new(Genome, 1, "ROC", TRUE)
   if (fasta == TRUE)
   {
     genome$readFasta(file, append)

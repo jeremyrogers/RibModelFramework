@@ -29,13 +29,8 @@ FONSEParameter::FONSEParameter(std::string filename) : Parameter()
 }
 
 #ifndef STANDALONE
-<<<<<<< HEAD
-FONSEParameter::FONSEParameter(std::vector<double> sphi, std::vector<unsigned> geneAssignment, std::vector<unsigned> _matrix, bool splitSer)
-	: Parameter(22)
-=======
-FONSEParameter::FONSEParameter(double sphi, std::vector<unsigned> geneAssignment, std::vector<unsigned> _matrix, bool splitSer) 
+FONSEParameter::FONSEParameter(std::vector <double> sphi, std::vector<unsigned> geneAssignment, std::vector<unsigned> _matrix, bool splitSer) 
 	: Parameter()
->>>>>>> testing2
 {
 	unsigned _numMixtures = _matrix.size() / 2;
 	std::vector<std::vector<unsigned>> thetaKMatrix;
@@ -54,13 +49,8 @@ FONSEParameter::FONSEParameter(double sphi, std::vector<unsigned> geneAssignment
 
 }
 
-<<<<<<< HEAD
-FONSEParameter::FONSEParameter(std::vector<double> sphi, unsigned _numMixtures, std::vector<unsigned> geneAssignment, bool splitSer, std::string _mutationSelectionState)
-	: Parameter(22)
-=======
-FONSEParameter::FONSEParameter(double sphi, unsigned _numMixtures, std::vector<unsigned> geneAssignment, bool splitSer, std::string _mutationSelectionState)
+FONSEParameter::FONSEParameter(std::vector <double> sphi, unsigned _numMixtures, std::vector<unsigned> geneAssignment, bool splitSer, std::string _mutationSelectionState)
 	: Parameter()
->>>>>>> testing2
 {
 	std::vector<std::vector<unsigned>> thetaKMatrix;
 	initParameterSet(sphi, _numMixtures, geneAssignment, thetaKMatrix, splitSer, _mutationSelectionState);

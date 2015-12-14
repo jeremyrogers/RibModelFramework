@@ -442,8 +442,8 @@ int main()
 	enum User { cedric, gabe, jeremy };
 	enum ModelToRun { ROC, RFP, FONSE };
 	/* Test variables */
-	User user = gabe;
-	ModelToRun modelToRun = RFP;
+	User user = jeremy;
+	ModelToRun modelToRun = ROC;
 	bool read = false;
 	bool testing = false;
 	bool withPhi = false;
@@ -519,7 +519,7 @@ int main()
 			case jeremy:
 				if (modelToRun == ROC || modelToRun == FONSE)
 				{
-					genome.readFasta("C:/Users/Jeremy/Documents/GitHub/RibModelFramework/ribModel/data/simulatedAllUniqueR.fasta");
+					genome.readFasta("C:/Users/Jeremy/Documents/GitHub/RibModelFramework/data/twoMixtures/simulatedAllUniqueR.fasta");
 					if (withPhi) {
 						genome.readObservedPhiValues("C:/Users/Jeremy/Documents/GitHub/RibModelFramework/ribModel/data/simulatedAllUniqueR_phi.csv", false);
 					}
@@ -536,27 +536,26 @@ int main()
 		std::cout << "Initializing shared parameter variables---------------\n";
 
 		std::vector<unsigned> geneAssignment(genome.getGenomeSize());
-/*
-		for (unsigned i = 0u; i < genome.getGenomeSize(); i++)
+
+		/*for (unsigned i = 0u; i < genome.getGenomeSize(); i++)
 		{
 			if (i < 961) geneAssignment[i] = 0u;
 			else if (i < 1418) geneAssignment[i] = 1u;
 			else geneAssignment[i] = 0u;
-		}
-		/* For 2 mixtures */
-		/*for (unsigned i = 0u; i < genome.getGenomeSize(); i++)
+		}*/
+		for (unsigned i = 0u; i < genome.getGenomeSize(); i++)
 		{
 			if (i < 500) geneAssignment[i] = 0u;
 			else geneAssignment[i] = 1u;
-		}*/
-		unsigned numMixtures = 1;
+		}
+		unsigned numMixtures = 2;
 		std::vector<double> sphi_init(numMixtures, 1);
 
 		/* For 1 mixture */
-		for (unsigned i = 0u; i < genome.getGenomeSize(); i++)
+		/*for (unsigned i = 0u; i < genome.getGenomeSize(); i++)
 		{
 			geneAssignment[i] = 0u;
-		}
+		}*/
 		std::vector<std::vector<unsigned>> mixtureDefinitionMatrix;
 		std::cout << "Done!------------------------\n\n\n";
 
@@ -610,8 +609,8 @@ int main()
 
 					break;
 				case jeremy:
-					files[0] = std::string("C:/Users/Jeremy/Documents/GitHub/RibModelFramework/ribModel/data/twoMixtures/simulated_mutation0.csv");
-					files[1] = std::string("C:/Users/Jeremy/Documents/GitHub/RibModelFramework/ribModel/data/twoMixtures/simulated_mutation1.csv");
+					files[0] = std::string("C:/Users/Jeremy/Documents/GitHub/RibModelFramework/data/twoMixtures/simulated_mutation0.csv");
+					files[1] = std::string("C:/Users/Jeremy/Documents/GitHub/RibModelFramework/data/twoMixtures/simulated_mutation1.csv");
 					//	tmp.initMutationCategories(files, tmp.getNumMutationCategories());
 
 					break;

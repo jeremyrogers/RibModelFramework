@@ -1012,7 +1012,7 @@ return tmp;
 }
 
 #ifndef STANDALONE
-RFPParameter::RFPParameter(double sphi, std::vector<unsigned> geneAssignment, std::vector<unsigned> _matrix, bool splitSer) : Parameter()
+RFPParameter::RFPParameter(std::vector<double> sphi, std::vector<unsigned> geneAssignment, std::vector<unsigned> _matrix, bool splitSer) : Parameter()
 {
   unsigned _numMixtures = _matrix.size() / 2;
   std::vector<std::vector<unsigned>> thetaKMatrix;
@@ -1031,7 +1031,7 @@ RFPParameter::RFPParameter(double sphi, std::vector<unsigned> geneAssignment, st
 
 }
 
-RFPParameter::RFPParameter(double sphi, unsigned _numMixtures, std::vector<unsigned> geneAssignment, bool splitSer, std::string _mutationSelectionState) :
+RFPParameter::RFPParameter(std::vector<double> sphi, unsigned _numMixtures, std::vector<unsigned> geneAssignment, bool splitSer, std::string _mutationSelectionState) :
 Parameter()
 {
   std::vector<std::vector<unsigned>> thetaKMatrix;
