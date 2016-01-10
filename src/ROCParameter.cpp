@@ -122,6 +122,9 @@ void ROCParameter::initROCParameterSet()
     CovarianceMatrix m((numMutationCategories + numSelectionCategories) * numCodons);
     m.choleskiDecomposition();
     covarianceMatrix.push_back(m);
+	std::cout << aa << ":\n";
+	m.printCovarianceMatrix();
+	std::cout << std::endl;
   }
 }
 
@@ -393,7 +396,7 @@ void ROCParameter::writeROCRestartFile(std::string filename)
 		{
 			std::string aa = aaListing[i];
 			oss << ">covarianceMatrix:\n" << aa << "\n";
-			CovarianceMatrix m = covarianceMatrix[ct->AAToAAIndex(aa)];
+			CovarianceMatrix m = covarianceMatrix[i];
 			std::vector<double>* tmp = m.getCovMatrix();
 			int size = m.getNumVariates();
 			for(unsigned k = 0; k < size * size; k++)
@@ -650,8 +653,9 @@ void ROCParameter::proposeCodonSpecificParameter()
 		}
 
 		std::vector<double> covaryingNums;
-		covaryingNums = covarianceMatrix[ct->AAToAAIndex(aa)].transformIidNumersIntoCovaryingNumbers(
-				iidProposed);
+		//covaryingNums = covarianceMatrix[ct->AAToAAIndex(aa)].transformIidNumersIntoCovaryingNumbers(
+		//		iidProposed);
+		covaryingNums = covarianceMatrix[k].transformIidNumersIntoCovaryingNumbers(iidProposed);
 		for (unsigned i = 0; i < numMutationCategories; i++)
 		{
 			for (unsigned j = i * numCodons, l = 0; j < (i * numCodons) + numCodons; j++, l++)
@@ -906,12 +910,13 @@ ROCParameter::ROCParameter(std::vector<double> stdDevSynthesisRate, unsigned _nu
 
 void ROCParameter::initCovarianceMatrix(SEXP _matrix, std::string aa)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	std::vector<double> tmp;
 	NumericMatrix matrix(_matrix);
 
 	for(unsigned i = 0u; i < aa.length(); i++)	aa[i] = (char)std::toupper(aa[i]);
 
-	unsigned aaIndex = SequenceSummary::aaToIndex.find(aa) -> second;
+	unsigned aaIndex = ct->AAToAAIndex(aa);
 	unsigned numRows = matrix.nrow();
 	std::vector<double> covMatrix(numRows * numRows);
 
@@ -935,6 +940,7 @@ void ROCParameter::initMutation(std::vector<double> mutationValues, unsigned mix
 {
 	//TODO: seperate out the R wrapper functionality and make the wrapper
 	//currentMutationParameter
+	CodonTable *ct = CodonTable::getInstance();
 	bool check = checkIndex(mixtureElement, 1, numMixtures);
 	if (check)
 	{
@@ -942,12 +948,10 @@ void ROCParameter::initMutation(std::vector<double> mutationValues, unsigned mix
 
 		unsigned category = getMutationCategory(mixtureElement);
 		aa[0] = (char) std::toupper(aa[0]);
-                unsigned aaStart;
-                unsigned aaEnd;
-                SequenceSummary::AAToCodonRange(aa, aaStart, aaEnd, true);
-                for (unsigned i = aaStart, j = 0; i < aaEnd; i++, j++)
+                std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+                for (unsigned i = 0, j = 0; i < codonRange.size(); i++, j++)
 		{
-			currentMutationParameter[category][i] = mutationValues[j];
+			currentMutationParameter[category][codonRange[i]] = mutationValues[j];
 		}
 	}
 }
@@ -957,6 +961,7 @@ void ROCParameter::initSelection(std::vector<double> selectionValues, unsigned m
 {
 	//TODO: seperate out the R wrapper functionality and make the wrapper
 	//currentSelectionParameter
+	CodonTable *ct = CodonTable::getInstance();
 	bool check = checkIndex(mixtureElement, 1, numMixtures);
 	if (check)
 	{
@@ -964,10 +969,8 @@ void ROCParameter::initSelection(std::vector<double> selectionValues, unsigned m
 		int category = getSelectionCategory(mixtureElement);
 
 		aa[0] = (char) std::toupper(aa[0]);
-                unsigned aaStart;
-                unsigned aaEnd;
-                SequenceSummary::AAToCodonRange(aa, aaStart, aaEnd, true);
-                for (unsigned i = aaStart, j = 0; i < aaEnd; i++, j++)
+                std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+                for (unsigned i = 0, j = 0; i < codonRange.size(); i++, j++)
                 {
                     currentSelectionParameter[category][i] = selectionValues[j];
                 }

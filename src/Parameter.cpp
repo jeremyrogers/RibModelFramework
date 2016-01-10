@@ -152,7 +152,7 @@ void Parameter::initParameterSet(std::vector<double> _stdDevSynthesisRate, unsig
 #endif
 
 	mutationSelectionState = _mutationSelectionState;
-	numParam = ((splitSer) ? 40 : 41);
+	numParam = 64;
 	numMixtures = _numMixtures;
 	stdDevSynthesisRate.resize(_stdDevSynthesisRate.size());
 	stdDevSynthesisRate_proposed.resize(_stdDevSynthesisRate.size());
@@ -166,7 +166,7 @@ void Parameter::initParameterSet(std::vector<double> _stdDevSynthesisRate, unsig
 
 	numAcceptForStdDevSynthesisRate = 0u;
 	std_csp.resize(numParam, 0.1);
-	numAcceptForCodonSpecificParameters.resize(maxGrouping, 0u);
+	numAcceptForCodonSpecificParameters.resize(26, 0u);
 	// proposal bias and std for phi values
 	bias_phi = 0;
 
@@ -1159,7 +1159,7 @@ void Parameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptationWidt
 		std::string aa = aaListing[i];
 		unsigned aaIndex = ct->AAToAAIndex(aa);
 		double acceptanceLevel = (double)numAcceptForCodonSpecificParameters[aaIndex] / (double)adaptationWidth;
-		traces.updateCodonSpecificAcceptanceRatioTrace(aaIndex, acceptanceLevel);
+		traces.updateCodonSpecificAcceptanceRatioTrace(i, acceptanceLevel);
 		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
 #ifndef STANDALONE
 		Rprintf("\t%s:\t%f\t%f\n", aa.c_str(), acceptanceLevel, std_csp[codonRange[0]]);
@@ -1170,14 +1170,14 @@ void Parameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptationWidt
 		{
 			if (acceptanceLevel < 0.2)
 			{
-				covarianceMatrix[aaIndex] *= 0.8;
-				covarianceMatrix[aaIndex].choleskiDecomposition();
+				covarianceMatrix[i] *= 0.8;
+				covarianceMatrix[i].choleskiDecomposition();
 				std_csp[codonRange[k]] *= 0.8;
 			}
 			if (acceptanceLevel > 0.3)
 			{
-				covarianceMatrix[aaIndex] *= 1.2;
-				covarianceMatrix[aaIndex].choleskiDecomposition();
+				covarianceMatrix[i] *= 1.2;
+				covarianceMatrix[i].choleskiDecomposition();
 				std_csp[codonRange[k]] *= 1.2;
 			}
 		}
