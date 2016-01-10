@@ -61,17 +61,17 @@ class CodonTable
 		std::vector <std::string> getGroupList();
         
 
-        unsigned getNumCodonsForAA(std::string aa, bool forParamVector = false);
-        unsigned getNumCodonsForAAIndex(unsigned aaIndex, bool forParamVector = false);
+        unsigned getNumCodonsForAA(std::string aa, bool withoutReference = false);
+        unsigned getNumCodonsForAAIndex(unsigned aaIndex, bool withoutReference = false);
 
 
 
         //Mapping operations:
         unsigned AAToAAIndex(std::string aa);
-        std::vector <unsigned> AAIndexToCodonRange(unsigned aaIndex, bool forParamVector = false);
+        std::vector <unsigned> AAIndexToCodonRange(unsigned aaIndex, bool withoutReference = false);
         std::string indexToCodon(unsigned index);
-        std::vector <unsigned> AAToCodonRange(std::string aa, bool forParamVector = false);
-        std::vector<std::string> AAToCodon(std::string aa, bool forParamVector = false);
+        std::vector <unsigned> AAToCodonRange(std::string aa, bool withoutReference = false);
+        std::vector<std::string> AAToCodon(std::string aa, bool withoutReference = false);
         std::string codonToAA(std::string& codon);
         unsigned codonToIndex(std::string& codon);
         unsigned codonToAAIndex(std::string& codon);
