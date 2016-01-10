@@ -69,11 +69,11 @@ class CodonTable
         //Mapping operations:
         unsigned AAToAAIndex(std::string aa);
         std::vector <unsigned> AAIndexToCodonRange(unsigned aaIndex, bool withoutReference = false);
-        std::string indexToCodon(unsigned index);
+        static std::string indexToCodon(unsigned index);
         std::vector <unsigned> AAToCodonRange(std::string aa, bool withoutReference = false);
         std::vector<std::string> AAToCodon(std::string aa, bool withoutReference = false);
         std::string codonToAA(std::string& codon);
-        unsigned codonToIndex(std::string& codon);
+		static unsigned codonToIndex(std::string& codon);
         unsigned codonToAAIndex(std::string& codon);
         std::string indexToAA(unsigned aaIndex);
 

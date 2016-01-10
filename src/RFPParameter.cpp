@@ -301,7 +301,7 @@ void RFPParameter::initAllTraces(unsigned samples, unsigned num_genes)
 void RFPParameter::initAlpha(double alphaValue, unsigned mixtureElement, std::string codon)
 {
 	unsigned category = getMutationCategory(mixtureElement);
-	unsigned index = SequenceSummary::codonToIndex(codon);
+	unsigned index = CodonTable::codonToIndex(codon);
 	currentAlphaParameter[category][index] = alphaValue;
 }
 
@@ -309,7 +309,7 @@ void RFPParameter::initAlpha(double alphaValue, unsigned mixtureElement, std::st
 void RFPParameter::initLambdaPrime(double lambdaPrimeValue, unsigned mixtureElement, std::string codon)
 {
 	unsigned category = getMutationCategory(mixtureElement);
-	unsigned index = SequenceSummary::codonToIndex(codon);
+	unsigned index = CodonTable::codonToIndex(codon);
 	currentLambdaPrimeParameter[category][index] = lambdaPrimeValue;
 }
 
@@ -346,7 +346,7 @@ void RFPParameter::initMutationSelectionCategories(std::vector<std::string> file
 			std::string codon = tmpString.substr(0, 3);
 			std::size_t pos = tmpString.find(",", 3);
 			std::string val = tmpString.substr(pos + 1, std::string::npos);
-			unsigned index = SequenceSummary::codonToIndex(codon, false);
+			unsigned index = CodonTable::codonToIndex(codon);
 			temp[index] = std::atof(val.c_str());
 		}
 		unsigned altered = 0u;
@@ -427,7 +427,7 @@ void RFPParameter::proposeCodonSpecificParameter()
 
 void RFPParameter::updateCodonSpecificParameter(std::string grouping)
 {
-	unsigned i = SequenceSummary::codonToIndex(grouping);
+	unsigned i = CodonTable::codonToIndex(grouping);
 	numAcceptForCodonSpecificParameters[i]++;
 
 	for(unsigned k = 0u; k < numMutationCategories; k++)
@@ -452,7 +452,7 @@ void RFPParameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptationW
 	{
 		std::cout << groupList[i] << "\t";
 
-		unsigned codonIndex = SequenceSummary::codonToIndex(groupList[i]);
+		unsigned codonIndex = CodonTable::codonToIndex(groupList[i]);
 		double acceptanceLevel = (double)numAcceptForCodonSpecificParameters[codonIndex] / (double)adaptationWidth;
 		std::cout << acceptanceLevel << " with std_csp = " << std_csp[i] <<"\n";
 		traces.updateCodonSpecificAcceptanceRatioTrace(codonIndex, acceptanceLevel);
@@ -478,7 +478,7 @@ void RFPParameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptationW
 double RFPParameter::getParameterForCategory(unsigned category, unsigned paramType, std::string codon, bool proposal)
 {
 	double rv;
-	unsigned codonIndex = SequenceSummary::codonToIndex(codon);
+	unsigned codonIndex = CodonTable::codonToIndex(codon);
 	if (paramType == RFPParameter::alp)
 	{
 		rv = (proposal ? proposedAlphaParameter[category][codonIndex] : currentAlphaParameter[category][codonIndex]);
@@ -535,7 +535,7 @@ void RFPParameter::calculateRFPMean(Genome& genome)
 	std::cout <<"Variance calculated\n";
 	for (unsigned codonIndex = 0; codonIndex < 61; codonIndex++)
 	{
-		std::cout << SequenceSummary::indexToCodon(codonIndex) <<" Mean:" << Means[codonIndex];
+		std::cout << CodonTable::indexToCodon(codonIndex) <<" Mean:" << Means[codonIndex];
 		std::cout <<"\tVariance:" << variance[codonIndex] <<"\n";
 	}
 }

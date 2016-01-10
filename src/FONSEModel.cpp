@@ -28,7 +28,7 @@ double FONSEModel::calculateLogLikelihoodRatioPerAA(Gene& gene, std::string grou
 	double codonProb[6];
 	std::vector <unsigned> codonRange = ct->AAToCodonRange(grouping);
 
-	unsigned maxIndexVal = 0u;
+	unsigned maxIndexVal = 0;
 	for (int i = 1; i < (numCodons - 1); i++)
 	{
 		if (selection[maxIndexVal] < selection[i])
@@ -37,7 +37,6 @@ double FONSEModel::calculateLogLikelihoodRatioPerAA(Gene& gene, std::string grou
 		}
 	}
 
-	unsigned maxIndexVal = 0;
 	for (unsigned i = 0; i < codonRange.size(); i++) {
 		positions = gene.geneData.getCodonPositions(codonRange[i]);
 		for (unsigned j = 0; j < positions->size(); j++) {
@@ -155,33 +154,6 @@ void FONSEModel::calculateLogLikelihoodRatioPerGene(Gene& gene, unsigned geneInd
 	logProbabilityRatio[3] = currentLogLikelihood;
 	logProbabilityRatio[4] = proposedLogLikelihood;
 }
-
-double FONSEModel::calculateLogLikelihoodRatioPerAA(Gene& gene, std::string grouping, double *mutation, double *selection, double phiValue)
-{
-	CodonTable *ct = CodonTable::getInstance();
-	int numCodons = ct->getNumCodonsForAA(grouping);
-	double logLikelihood = 0.0;
-
-	std::vector <unsigned> *positions;
-	double codonProb[6];
-	std::vector <unsigned> codonRange = ct->AAToCodonRange(grouping);
-
-	unsigned maxIndexVal = 0;
-	for (unsigned i = 0; i < codonRange.size(); i++) {
-		positions = gene.geneData.getCodonPositions(codonRange[i]);
-		for (unsigned j = 0; j < positions->size(); j++) {
-			calculateCodonProbabilityVector(numCodons, positions->at(j), maxIndexVal, mutation, selection, phiValue, codonProb);
-			for (int k = 0; k < numCodons; k++) {
-				if (codonProb[k] == 0) continue;
-				logLikelihood += std::log(codonProb[k]);
-			}
-		} 
-		positions->clear();
-	}
-
-	return logLikelihood;
-}
-
 
 void FONSEModel::calculateLogLikelihoodRatioPerGroupingPerCategory(std::string grouping, Genome& genome, double& logAcceptanceRatioForAllMixtures)
 {
