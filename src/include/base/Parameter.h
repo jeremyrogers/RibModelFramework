@@ -30,6 +30,8 @@ class Parameter {
 		static void swap(double& a, double& b);
 		static void swap(int& a, int& b);
 
+
+		std::vector<double> codonSpecificPrior;
 	public:
 
 		static const std::string allUnique;
@@ -69,6 +71,9 @@ class Parameter {
 		void InitializeSynthesisRate(std::vector<double> expression);
 		std::vector<double> readPhiValues(std::string filename); //General function, possibly move
 
+
+		//prior functions
+		double getCodonSpecificPriorStdDev(unsigned paramType);
 
 
 		//Mixture Definition Matrix and Category Functions:
@@ -203,6 +208,7 @@ class Parameter {
 		unsigned getSynthesisRateCategoryForMixture(unsigned mixtureElement);
 		std::vector<std::vector<unsigned>> getCategories();
 		void setCategories(std::vector<std::vector<unsigned>> _categories);
+		void setCategoriesForTrace();
 		void setNumMutationCategories(unsigned _numMutationCategories);
 		void setNumSelectionCategories(unsigned _numSelectionCategories);
 
@@ -248,6 +254,8 @@ class Parameter {
 		std::vector<unsigned> numAcceptForCodonSpecificParameters;
 		std::string mutationSelectionState; //TODO: Probably needs to be renamed
 
+		std::vector<std::vector<std::vector<double>>> proposedCodonSpecificParameter;
+		std::vector<std::vector<std::vector<double>>> currentCodonSpecificParameter;
 
 		std::vector<unsigned> mixtureAssignment;
 		std::vector<std::string> groupList;

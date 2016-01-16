@@ -7,7 +7,7 @@
 int main()
 {
 	std::cout << "Initializing MCMCAlgorithm object---------------" << std::endl;
-	int samples = 1000;
+	int samples = 5000;
 	int thining = 10;
 	int useSamples = 100;
 	std::cout << "\t# Samples: " << samples << "\n";
@@ -19,14 +19,16 @@ int main()
 
 
 	std::cout << "initialize Genome object--------------------------" << std::endl;
-	bool withPhi = false;
+	bool withPhi = true;
 
 	Genome genome;
 	//genome.readFasta("/home/clandere/CodonUsageBias/RibosomeModel/RibModelFramework/data/twoMixtures/simulatedAllUniqueR_unevenMixtures.fasta");
-	genome.readFasta("F:/GitHub/RibModelDev/data/twoMixtures/simulatedAllUniqueR_unevenMixtures.fasta");
+	genome.readFasta("F:/GitHub/RibModelDev/data/twoMixtures/simulatedAllUniqueR.fasta");
+	//genome.readFasta("E:/RibosomeModel/RibModelDev/data/twoMixtures/simulatedAllUniqueR_unevenMixtures.fasta");
 	if(withPhi)
 	{
-		genome.readObservedPhiValues("F:/GitHub/RibModelDev/data/twoMixtures/simulatedAllUniqueR_phi_unevenMixtures.csv", false);
+		genome.readObservedPhiValues("F:/GitHub/RibModelDev/data/twoMixtures/simulatedAllUniqueR_phi_withPhiSet.csv", false);
+		//genome.readObservedPhiValues("E:/RibosomeModel/RibModelDev/data/twoMixtures/simulatedAllUniqueR_phi_unevenMixtures.csv", false);
 	}
 
 	std::cout << "Done!-------------------------------\n\n\n";
@@ -63,9 +65,13 @@ int main()
 	std::vector<std::string> files(2);
 	files[0] = std::string("F:/GitHub/RibModelDev/data/twoMixtures/simulated_mutation0.csv");
 	files[1] = std::string("F:/GitHub/RibModelDev/data/twoMixtures/simulated_mutation1.csv");
+	//files[0] = std::string("E:/RibosomeModel/RibModelDev/data/twoMixtures/simulated_mutation0.csv");
+	//files[1] = std::string("E:/RibosomeModel/RibModelDev/data/twoMixtures/simulated_mutation1.csv");
 	parameter.initMutationCategories(files, parameter.getNumMutationCategories());
 	files[0] = std::string("F:/GitHub/RibModelDev/data/twoMixtures/simulated_selection0.csv");
 	files[1] = std::string("F:/GitHub/RibModelDev/data/twoMixtures/simulated_selection1.csv");
+	//files[0] = std::string("E:/RibosomeModel/RibModelDev/data/twoMixtures/simulated_selection0.csv");
+	//files[1] = std::string("E:/RibosomeModel/RibModelDev/data/twoMixtures/simulated_selection1.csv");
 	parameter.initSelectionCategories(files, parameter.getNumSelectionCategories());
 
 	parameter.InitializeSynthesisRate(genome, sphi_init[0]);
@@ -91,9 +97,9 @@ int main()
 #ifdef GABE
 int main()
 {
-	std::string modelToRun = "RFP"; //can also be ROC or FONSE
+	std::string modelToRun = "FONSE"; //can also be ROC or FONSE
 	bool withPhi = false;
-	bool fromRestart = false;
+	bool fromRestart = true;
 	unsigned numMixtures = 1;
 
 
@@ -270,14 +276,6 @@ int main()
 		mcmc.run(genome, model, 1, 0);
 		std::cout << "Done!----------------------------------\n\n\n" << std::endl;
 
-		Trace trace = parameter.getTraceObject();
-		std::string codon = "ATG";
-		std::vector<double> v;
-		v = trace.getCodonSpecificParameterTraceByMixtureElementForCodon(0, codon, 0);
-		for (int i = 0; i < v.size(); i++)
-		{
-			std::cout <<v[i] <<"\n";
-		}
 	} //END OF RFP
 	else if (modelToRun == "FONSE")
 	{
@@ -367,8 +365,8 @@ int main()
 {
 	unsigned index;
 	bool fromRestart = false;
-	std::string modelToRun = "FONSE";
-	bool withPhi = true;
+	std::string modelToRun = "ROC";
+	bool withPhi = false;
 
 
 	
@@ -526,7 +524,7 @@ int main()
 	{
 		std::cout << "initialize Genome object--------------------------" << std::endl;
 		Genome genome(1, "ROC", true);
-		genome.readFasta("C:/Users/Jeremy/Documents/GitHub/RibModelDev/data/FONSE/genome_2000.fasta");
+		genome.readFasta("C:/Users/Jeremy/Documents/GitHub/RibModelDev/data/realGenomes/Skluyveri.fasta");
 		std::cout << "Done!-------------------------------\n\n\n";
 
 
@@ -563,10 +561,10 @@ int main()
 			std::cout << "\t# mixtures: " << numMixtures << "\n";
 			std::cout << "\tmixture definition: " << mixDef << "\n";
 
-			std::vector<std::string> files(1);
-			files[0] = std::string("C:/Users/Jeremy/Documents/GitHub/RibModelDev/data/FONSE/genome_2000.mutation.csv");
-			tmp.initMutationCategories(files, tmp.getNumMutationCategories());
-			tmp.InitializeSynthesisRate(genome, sphi_init[0]);
+			//std::vector<std::string> files(1);
+			//files[0] = std::string("C:/Users/Jeremy/Documents/GitHub/RibModelDev/data/FONSE/genome_2000.mutation.csv");
+			//tmp.initMutationCategories(files, tmp.getNumMutationCategories());
+			//tmp.InitializeSynthesisRate(genome, sphi_init[0]);
 			//std::vector<double> phiVals = parameter.readPhiValues("/home/clandere/CodonUsageBias/RibosomeModel/RibModelFramework/ribModel/data/Skluyveri_ChrA_ChrCleft_phi_est.csv");
 			//parameter.InitializeSynthesisRate(phiVals);
 			parameter = tmp;

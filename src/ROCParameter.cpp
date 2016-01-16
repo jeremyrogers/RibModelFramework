@@ -45,12 +45,6 @@ ROCParameter& ROCParameter::operator=(const ROCParameter& rhs)
 	bias_csp = rhs.bias_csp;
 	std_csp = rhs.std_csp;
 
-	currentMutationParameter = rhs.currentMutationParameter;
-	proposedMutationParameter = rhs.proposedMutationParameter;
-
-	currentSelectionParameter = rhs.currentSelectionParameter;
-	proposedSelectionParameter = rhs.proposedSelectionParameter;
-
 	noiseOffset = rhs.noiseOffset;
 	noiseOffset_proposed = rhs.noiseOffset_proposed;
 	std_NoiseOffset = rhs.std_NoiseOffset;
@@ -95,24 +89,28 @@ void ROCParameter::initROCParameterSet()
 	}
 
 	//may need getter fcts
-	currentMutationParameter.resize(numMutationCategories);
-	proposedMutationParameter.resize(numMutationCategories);
+
+	proposedCodonSpecificParameter.resize(2);
+	currentCodonSpecificParameter.resize(2);
+
+	currentCodonSpecificParameter[dM].resize(numMutationCategories);
+	proposedCodonSpecificParameter[dM].resize(numMutationCategories);
 
 	for (unsigned i = 0u; i < numMutationCategories; i++)
 	{
 		std::vector<double> tmp(numParam, 0.0);
-		currentMutationParameter[i] = tmp;
-		proposedMutationParameter[i] = tmp;
+		currentCodonSpecificParameter[dM][i] = tmp;
+		proposedCodonSpecificParameter[dM][i] = tmp;
 	}
 
-	currentSelectionParameter.resize(numSelectionCategories);
-	proposedSelectionParameter.resize(numSelectionCategories);
+	currentCodonSpecificParameter[dEta].resize(numSelectionCategories);
+	proposedCodonSpecificParameter[dEta].resize(numSelectionCategories);
 
 	for (unsigned i = 0u; i < numSelectionCategories; i++)
 	{
 		std::vector<double> tmp(numParam, 0.0);
-		proposedSelectionParameter[i] = tmp;
-		currentSelectionParameter[i] = tmp;
+		proposedCodonSpecificParameter[dEta][i] = tmp;
+		currentCodonSpecificParameter[dEta][i] = tmp;
 	}
 
   for (unsigned i = 0; i < aaListing.size(); i++)
@@ -191,7 +189,7 @@ void ROCParameter::initROCValuesFromFile(std::string filename)
 				{
 					if (tmp == "***")
 					{
-						currentMutationParameter.resize(currentMutationParameter.size() + 1);
+						currentCodonSpecificParameter[dM].resize(currentCodonSpecificParameter[dM].size() + 1);
 						cat++;
 					}
 					else if (tmp == "\n")
@@ -202,7 +200,7 @@ void ROCParameter::initROCValuesFromFile(std::string filename)
 						iss.str(tmp);
 						while (iss >> val)
 						{
-							currentMutationParameter[cat - 1].push_back(val);
+							currentCodonSpecificParameter[dM][cat - 1].push_back(val);
 						}
 					}
 				}
@@ -210,7 +208,7 @@ void ROCParameter::initROCValuesFromFile(std::string filename)
 				{
 					if (tmp == "***")
 					{
-						currentSelectionParameter.resize(currentSelectionParameter.size() + 1);
+						currentCodonSpecificParameter[dEta].resize(currentCodonSpecificParameter[dEta].size() + 1);
 						cat++;
 					}
 					else if (tmp == "\n")
@@ -221,7 +219,7 @@ void ROCParameter::initROCValuesFromFile(std::string filename)
 						iss.str(tmp);
 						while (iss >> val)
 						{
-							currentSelectionParameter[cat - 1].push_back(val);
+							currentCodonSpecificParameter[dEta][cat - 1].push_back(val);
 						}
 					}
 				}
@@ -284,15 +282,15 @@ void ROCParameter::initROCValuesFromFile(std::string filename)
 
 	//init other values
 	bias_csp = 0;
-	proposedMutationParameter.resize(numMutationCategories);
-	proposedSelectionParameter.resize(numSelectionCategories);
+	proposedCodonSpecificParameter[dM].resize(numMutationCategories);
+	proposedCodonSpecificParameter[dEta].resize(numSelectionCategories);
 	for (unsigned i = 0; i < numMutationCategories; i++)
 	{
-		proposedMutationParameter[i] = currentMutationParameter[i];
+		proposedCodonSpecificParameter[dM][i] = currentCodonSpecificParameter[dM][i];
 	}
 	for (unsigned i = 0; i < numSelectionCategories; i++)
 	{
-		proposedSelectionParameter[i] = currentSelectionParameter[i];
+		proposedCodonSpecificParameter[dEta][i] = currentCodonSpecificParameter[dEta][i];
 	}
 }
 
@@ -361,12 +359,12 @@ void ROCParameter::writeROCRestartFile(std::string filename)
 				oss << " ";
 		}
 		oss << ">currentMutationParameter:\n";
-		for (unsigned i = 0; i < currentMutationParameter.size(); i++)
+		for (unsigned i = 0; i < currentCodonSpecificParameter[dM].size(); i++)
 		{
 			oss << "***\n";
-			for (j = 0; j < currentMutationParameter[i].size(); j++)
+			for (j = 0; j < currentCodonSpecificParameter[dM][i].size(); j++)
 			{
-				oss << currentMutationParameter[i][j];
+				oss << currentCodonSpecificParameter[dM][i][j];
 				if ((j + 1) % 10 == 0)
 					oss << "\n";
 				else
@@ -377,12 +375,12 @@ void ROCParameter::writeROCRestartFile(std::string filename)
 		}
 
 		oss << ">currentSelectionParameter:\n";
-		for (unsigned i = 0; i < currentSelectionParameter.size(); i++)
+		for (unsigned i = 0; i < currentCodonSpecificParameter[dEta].size(); i++)
 		{
 			oss << "***\n";
-			for (j = 0; j < currentSelectionParameter[i].size(); j++)
+			for (j = 0; j < currentCodonSpecificParameter[dEta][i].size(); j++)
 			{
-				oss << currentSelectionParameter[i][j];
+				oss << currentCodonSpecificParameter[dEta][i][j];
 				if ((j + 1) % 10 == 0)
 					oss << "\n";
 				else
@@ -462,8 +460,8 @@ void ROCParameter::initMutationCategories(std::vector<std::string> files, unsign
 				//std::cout << tmp.substr(pos + 1, pos2 - pos - 1 ) <<"\n";
 				double value = std::atof(tmp.substr(pos + 1, pos2 - pos - 1).c_str());
 
-				currentMutationParameter[category][codonIndex] = value;
-				proposedMutationParameter[category][codonIndex] = value;
+				currentCodonSpecificParameter[dM][category][codonIndex] = value;
+				proposedCodonSpecificParameter[dM][category][codonIndex] = value;
 			}
 		}
 
@@ -507,8 +505,8 @@ void ROCParameter::initSelectionCategories(std::vector<std::string> files, unsig
 				//	std::cout << tmp.substr(pos + 1, pos2 - pos - 1 ) <<"\n";
 				double value = std::atof(tmp.substr(pos + 1, pos2 - pos - 1).c_str());
 
-				currentSelectionParameter[category][codonIndex] = value;
-				proposedSelectionParameter[category][codonIndex] = value;
+				currentCodonSpecificParameter[dEta][category][codonIndex] = value;
+				proposedCodonSpecificParameter[dEta][category][codonIndex] = value;
 			}
 		}
 
@@ -540,8 +538,8 @@ void ROCParameter::updateNoiseOffsetTraces(unsigned sample)
 
 void ROCParameter::updateCodonSpecificParameterTrace(unsigned sample, std::string grouping)
 {
-	traces.updateCodonSpecificParameterTraceForAA(sample, grouping, currentMutationParameter, dM);
-	traces.updateCodonSpecificParameterTraceForAA(sample, grouping, currentSelectionParameter, dEta);
+	traces.updateCodonSpecificParameterTraceForAA(sample, grouping, currentCodonSpecificParameter[dM], dM);
+	traces.updateCodonSpecificParameterTraceForAA(sample, grouping, currentCodonSpecificParameter[dEta], dEta);
 }
 
 
@@ -660,14 +658,14 @@ void ROCParameter::proposeCodonSpecificParameter()
 		{
 			for (unsigned j = i * numCodons, l = 0; j < (i * numCodons) + numCodons; j++, l++)
 			{
-				proposedMutationParameter[i][codonRange[l]] = currentMutationParameter[i][codonRange[l]] + covaryingNums[j];
+				proposedCodonSpecificParameter[dM][i][codonRange[l]] = currentCodonSpecificParameter[dM][i][codonRange[l]] + covaryingNums[j];
 			}
 		}
 		for (unsigned i = 0; i < numSelectionCategories; i++)
 		{
 			for (unsigned j = i * numCodons, l = 0; j < (i * numCodons) + numCodons; j++, l++)
 			{
-				proposedSelectionParameter[i][codonRange[0]] = currentSelectionParameter[i][codonRange[0]]
+					proposedCodonSpecificParameter[dEta][i][codonRange[l]] = currentCodonSpecificParameter[dEta][i][codonRange[l]]
 												   + covaryingNums[(numMutationCategories * numCodons) + j];
 			}
 		}
@@ -687,14 +685,14 @@ void ROCParameter::updateCodonSpecificParameter(std::string grouping)
 	{
 		for (unsigned i = 0; i < codonRange.size(); i++)
 		{
-			currentMutationParameter[k][codonRange[i]] = proposedMutationParameter[k][codonRange[i]];
+			currentCodonSpecificParameter[dM][k][codonRange[i]] = proposedCodonSpecificParameter[dM][k][codonRange[i]];
 		}
 	}
 	for (unsigned k = 0u; k < numSelectionCategories; k++)
 	{
 		for (unsigned i = 0; i < codonRange.size(); i++)
 		{
-			currentSelectionParameter[k][codonRange[i]] = proposedSelectionParameter[k][codonRange[i]];
+			currentCodonSpecificParameter[dEta][k][codonRange[i]] = proposedCodonSpecificParameter[dEta][k][codonRange[i]];
 		}
 	}
 }
@@ -816,11 +814,11 @@ void ROCParameter::adaptNoiseOffsetProposalWidth(unsigned adaptationWidth)
 void ROCParameter::setNumObservedPhiSets(unsigned _phiGroupings)
 {
 	obsPhiSets = _phiGroupings;
-	noiseOffset.resize(obsPhiSets, 0.0);
-	noiseOffset_proposed.resize(obsPhiSets, 0.0);
+	noiseOffset.resize(obsPhiSets, 0.1);
+	noiseOffset_proposed.resize(obsPhiSets, 0.1);
 	std_NoiseOffset.resize(obsPhiSets, 0.1);
 	numAcceptForNoiseOffset.resize(obsPhiSets, 0);
-	observedSynthesisNoise.resize(obsPhiSets, 0.0);
+	observedSynthesisNoise.resize(obsPhiSets, 1.0);
 }
 
 
@@ -830,24 +828,7 @@ void ROCParameter::getParameterForCategory(unsigned category, unsigned paramType
 	CodonTable *ct = CodonTable::getInstance();
 
 	std::vector<double> *tempSet;
-	if (paramType == ROCParameter::dM)
-	{
-		tempSet = (proposal ? &proposedMutationParameter[category] : &currentMutationParameter[category]);
-	}
-	else if (paramType == ROCParameter::dEta)
-	{
-		tempSet = (proposal ? &proposedSelectionParameter[category] : &currentSelectionParameter[category]);
-	}
-	else
-	{
-#ifndef STANDALONE
-		Rf_warning("Warning in ROCParameter::getParameterForCategory: Unknown parameter type: %d\n\tReturning mutation parameter! \n", paramType);
-#else
-		std::cerr << "Warning in ROCParameter::getParameterForCategory: Unknown parameter type: " << paramType << "\n";
-		std::cerr << "\tReturning mutation parameter! \n";
-#endif
-		tempSet = (proposal ? &proposedMutationParameter[category] : &currentMutationParameter[category]);
-	}
+	tempSet = (proposal ? &proposedCodonSpecificParameter[paramType][category] : &currentCodonSpecificParameter[paramType][category]);
 
 	std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
 
@@ -951,7 +932,7 @@ void ROCParameter::initMutation(std::vector<double> mutationValues, unsigned mix
                 std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
                 for (unsigned i = 0, j = 0; i < codonRange.size(); i++, j++)
 		{
-			currentMutationParameter[category][codonRange[i]] = mutationValues[j];
+			currentCodonSpecificParameter[dM][category][codonRange[i]] = mutationValues[j];
 		}
 	}
 }
@@ -972,7 +953,7 @@ void ROCParameter::initSelection(std::vector<double> selectionValues, unsigned m
                 std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
                 for (unsigned i = 0, j = 0; i < codonRange.size(); i++, j++)
                 {
-                    currentSelectionParameter[category][i] = selectionValues[j];
+                    currentCodonSpecificParameter[dEta][category][i] = selectionValues[j];
                 }
 	}
 }
@@ -985,49 +966,49 @@ void ROCParameter::initSelection(std::vector<double> selectionValues, unsigned m
 
 std::vector<std::vector<double>> ROCParameter::getProposedMutationParameter()
 {
-	return proposedMutationParameter;
+	return proposedCodonSpecificParameter[dM];
 }
 
 
 std::vector<std::vector<double>> ROCParameter::getCurrentMutationParameter()
 {
-	return currentMutationParameter;
+	return currentCodonSpecificParameter[dM];
 }
 
 
 std::vector<std::vector<double>> ROCParameter::getProposedSelectionParameter()
 {
-	return proposedSelectionParameter;
+	return proposedCodonSpecificParameter[dEta];
 }
 
 
 std::vector<std::vector<double>> ROCParameter::getCurrentSelectionParameter()
 {
-	return currentSelectionParameter;
+	return currentCodonSpecificParameter[dEta];
 }
 
 
 void ROCParameter::setProposedMutationParameter(std::vector<std::vector<double>> _proposedMutationParameter)
 {
-	proposedMutationParameter = _proposedMutationParameter;
+	proposedCodonSpecificParameter[dM] = _proposedMutationParameter;
 }
 
 
 void ROCParameter::setCurrentMutationParameter(std::vector<std::vector<double>> _currentMutationParameter)
 {
-	currentMutationParameter = _currentMutationParameter;
+	currentCodonSpecificParameter[dM] = _currentMutationParameter;
 }
 
 
 void ROCParameter::setProposedSelectionParameter(std::vector<std::vector<double>> _proposedSelectionParameter)
 {
-	proposedSelectionParameter = _proposedSelectionParameter;
+	proposedCodonSpecificParameter[dEta] = _proposedSelectionParameter;
 }
 
 
 void ROCParameter::setCurrentSelectionParameter(std::vector<std::vector<double>> _currentSelectionParameter)
 {
-	currentSelectionParameter = _currentSelectionParameter;
+	currentCodonSpecificParameter[dEta] = _currentSelectionParameter;
 }
 
 

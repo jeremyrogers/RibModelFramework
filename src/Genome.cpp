@@ -12,6 +12,17 @@ std::vector <std::string> Genome::defaultVector;
 // ---------- Constructors & Destructors ---------- //
 //--------------------------------------------------//
 
+Genome::Genome()
+{
+	CodonTable::createCodonTable(1, "ROC", true);
+}
+
+
+Genome::Genome(unsigned codonTableId, std::string model, bool splitAA)
+{
+	CodonTable::createCodonTable(codonTableId, model, splitAA);
+}
+
 
 Genome::Genome(unsigned codonTableId, std::string model, bool splitAA, std::vector <std::string> groupList)
 {
@@ -671,7 +682,6 @@ std::vector<unsigned> Genome::getCodonCountsPerGene(std::string codon)
 
 #ifndef STANDALONE
 
-
 bool Genome::checkIndex(unsigned index, unsigned lowerbound, unsigned upperbound)
 {
 	bool check = false;
@@ -742,8 +752,8 @@ RCPP_MODULE(Genome_mod)
 {
 	class_<Genome>("Genome")
 		//Constructors & Destructors:
-		.constructor("empty constructor")
-
+		.constructor<unsigned, std::string, bool, std::vector <std::string> >()
+		.constructor<unsigned, std::string, bool>()
 
 		//File I/O Functions:
 		.method("readFasta", &Genome::readFasta, "reads a genome into the object")

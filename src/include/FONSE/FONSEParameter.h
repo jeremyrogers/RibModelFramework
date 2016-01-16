@@ -18,14 +18,8 @@ class FONSEParameter : public Parameter
 {
 	private:
 
-		std::vector <std::vector <double> > proposedMutationParameter;
-		std::vector <std::vector <double> > currentMutationParameter;
-		std::vector <std::vector <double> > proposedSelectionParameter;
-		std::vector <std::vector <double> > currentSelectionParameter;
 		double bias_csp;
 		double mutation_prior_sd;
-
-
 
 		std::vector <double> propose(std::vector <double> currentParam, double(*proposal)(double a, double b), double A, std::vector <double> B);
 
@@ -60,9 +54,6 @@ class FONSEParameter : public Parameter
 		//Trace Functions:
 		void updateCodonSpecificParameterTrace(unsigned sample, std::string grouping);
 
-		double getMutationPriorStandardDeviation() { return mutation_prior_sd; }
-		void setMutationPriorStandardDeviation(double _mutation_prior_sd) { mutation_prior_sd = _mutation_prior_sd; }
-
 
 		//Covariance Functions:
 		CovarianceMatrix& getCovarianceMatrixForAA(std::string aa);
@@ -71,6 +62,12 @@ class FONSEParameter : public Parameter
 		double getCurrentCodonSpecificProposalWidth(unsigned aa);
 		void proposeCodonSpecificParameter();
 		void updateCodonSpecificParameter(std::string grouping);
+
+
+		//Prior Functions:
+		double getMutationPriorStandardDeviation();
+		void setMutationPriorStandardDeviation(double _mutation_prior_sd);
+
 
 		//Other functions:
 		void getParameterForCategory(unsigned category, unsigned paramType, std::string aa, bool proposal, double *returnSet);
@@ -102,6 +99,10 @@ class FONSEParameter : public Parameter
 		//CSP Functions:
 		std::vector< std::vector <double> > getCurrentMutationParameter();
 		std::vector< std::vector <double> > getCurrentSelectionParameter();
+		void setCurrentMutationParameter(std::vector<std::vector<double>> _currentMutationParameter);
+		void setCurrentSelectionParameter(std::vector<std::vector<double>> _currentSelectionParameter);
+
+
 #endif //STANDALONE
 
 	protected:

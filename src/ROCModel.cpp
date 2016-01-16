@@ -122,7 +122,7 @@ void ROCModel::calculateLogLikelihoodRatioPerGene(Gene& gene, unsigned geneIndex
 	unsigned mixture = getMixtureAssignment(geneIndex);
 	mixture = getSynthesisRateCategory(mixture);
 	double stdDevSynthesisRate = parameter->getStdDevSynthesisRate(mixture, false);
-	double mPhi = (-(stdDevSynthesisRate * stdDevSynthesisRate) / 2);
+	double mPhi = (-(stdDevSynthesisRate * stdDevSynthesisRate) * 0.5); // X * 0.5 = X / 2
 	double logPhiProbability = Parameter::densityLogNorm(phiValue, mPhi, stdDevSynthesisRate, true);
 	double logPhiProbability_proposed = Parameter::densityLogNorm(phiValue_proposed, mPhi, stdDevSynthesisRate, true);
 
@@ -131,12 +131,8 @@ void ROCModel::calculateLogLikelihoodRatioPerGene(Gene& gene, unsigned geneIndex
 		for (unsigned i = 0; i < parameter->getNumObservedPhiSets(); i++) {
 			double obsPhi = gene.getObservedSynthesisRate(i);
 			if (obsPhi > -1.0) {
-				//logPhiProbability += Parameter::densityLogNorm(obsPhi + getNoiseOffset(i), std::log(phiValue), getObservedSynthesisNoise(i), true);
-				//logPhiProbability_proposed += Parameter::densityLogNorm(obsPhi + getNoiseOffset(i), std::log(phiValue_proposed), getObservedSynthesisNoise(i), true);
-
 				logPhiProbability += Parameter::densityLogNorm(obsPhi, std::log(phiValue) + getNoiseOffset(i), getObservedSynthesisNoise(i), true);
 				logPhiProbability_proposed += Parameter::densityLogNorm(obsPhi, std::log(phiValue_proposed) + getNoiseOffset(i), getObservedSynthesisNoise(i), true);
-
 			}
 		}
 	}
@@ -220,9 +216,9 @@ void ROCModel::calculateLogLikelihoodRatioForHyperParameters(Genome &genome, uns
 	for(unsigned i = 0u; i < selectionCategory; i++)
 	{
 		currentStdDevSynthesisRate[i] = getStdDevSynthesisRate(i, false);
-		currentMphi[i] = -((currentStdDevSynthesisRate[i] * currentStdDevSynthesisRate[i]) / 2);
+		currentMphi[i] = -((currentStdDevSynthesisRate[i] * currentStdDevSynthesisRate[i]) * 0.5);
 		proposedStdDevSynthesisRate[i] = getStdDevSynthesisRate(i, true);
-		proposedMphi[i] = -((proposedStdDevSynthesisRate[i] * proposedStdDevSynthesisRate[i]) / 2);
+		proposedMphi[i] = -((proposedStdDevSynthesisRate[i] * proposedStdDevSynthesisRate[i]) * 0.5);
 		// take the jacobian into account for the non-linear transformation from logN to N distribution
 		lpr -= (std::log(currentStdDevSynthesisRate[i]) - std::log(proposedStdDevSynthesisRate[i]));
 	}
@@ -264,6 +260,7 @@ void ROCModel::calculateLogLikelihoodRatioForHyperParameters(Genome &genome, uns
 			double noiseOffset = getNoiseOffset(i, false);
 			double noiseOffset_proposed = getNoiseOffset(i, true);
 			double observedSynthesisNoise = getObservedSynthesisNoise(i);
+
 #ifndef __APPLE__
 //#pragma omp parallel for reduction(+:lpr)
 #endif
@@ -627,9 +624,11 @@ void ROCModel::updateGibbsSampledHyperParameters(Genome &genome)
 			}
 			rate /= 2;
 			double rand = parameter->randGamma(shape, rate);
-			parameter->setObservedSynthesisNoise(i, std::sqrt(1 / rand));
+			//std::cout << noiseOffset << "\t" << shape << "\t" << rate << "\t" << rand << "\t" << std::sqrt(1 / rand) << "\n";
+			parameter->setObservedSynthesisNoise(i, std::sqrt(1.0 / rand));
 		}
 	}
+	//std::cout << "\n";
 }
 
 

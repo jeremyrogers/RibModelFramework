@@ -31,7 +31,9 @@ class Genome
 	public:
 
 		//Constructors & destructors:
-		explicit Genome(unsigned codonTableId = 1, std::string model = "ROC", bool splitAA = true, std::vector <std::string> = defaultVector);
+		explicit Genome();
+		explicit Genome(unsigned codonTableId, std::string model, bool splitAA);
+		explicit Genome(unsigned codonTableId, std::string model, bool splitAA, std::vector <std::string> groupList);
 		virtual ~Genome();
 		Genome& operator=(const Genome& other);
 
@@ -63,6 +65,7 @@ class Genome
 		//R Section:
 
 #ifndef STANDALONE
+
 
 		bool checkIndex(unsigned index, unsigned lowerbound, unsigned upperbound);
 		Gene& getGeneByIndex(unsigned index, bool simulated = false);

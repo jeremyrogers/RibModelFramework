@@ -208,7 +208,11 @@ std::string CodonTable::codonToAA(std::string& codon)
 
 unsigned CodonTable::codonToIndex(std::string& codon)
 {
-    return codonToIndexWithReference.find(codon)->second;
+	unsigned rv = 64;
+	std::map <std::string, unsigned int>::const_iterator mit;
+	mit = codonToIndexWithReference.find(codon);
+	if (mit != codonToIndexWithReference.end()) rv = mit->second;
+    return rv;
 }
 
 

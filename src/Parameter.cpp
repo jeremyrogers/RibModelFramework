@@ -100,6 +100,8 @@ Parameter& Parameter::operator=(const Parameter& rhs)
   	numMutationCategories = rhs.numMutationCategories;
   	numSelectionCategories = rhs.numSelectionCategories;
 
+	proposedCodonSpecificParameter = rhs.proposedCodonSpecificParameter;
+	currentCodonSpecificParameter = rhs.currentCodonSpecificParameter;
 
   	numMixtures = rhs.numMixtures;
 
@@ -652,8 +654,14 @@ std::vector <double> Parameter::readPhiValues(std::string filename)
 	return RV;
 }
 
+// ----------------------------------------------------------------------//
+// -------------------------- Prior functions ---------------------------//
+// ----------------------------------------------------------------------//
 
-
+double Parameter::getCodonSpecificPriorStdDev(unsigned paramType)
+{
+	return codonSpecificPrior[paramType];
+}
 
 
 // ----------------------------------------------------------------------//
@@ -1666,10 +1674,10 @@ double Parameter::randGamma(double shape, double rate)
 #ifndef STANDALONE
 	RNGScope scope;
 	NumericVector xx(1);
-	xx = rgamma(1, shape, rate);
+	xx = rgamma(1, shape, 1.0 / rate);
 	rv = xx[0];
 #else
-	std::gamma_distribution<double> distribution(shape, 1 / rate);
+	std::gamma_distribution<double> distribution(shape, 1.0 / rate);
 	rv = distribution(generator);
 #endif
 	return rv;
@@ -1895,6 +1903,12 @@ void Parameter::setCategories(std::vector<std::vector<unsigned>> _categories)
 		categories[i].delM = _categories[i][0];
 		categories[i].delEta = _categories[i][1];
 	}
+}
+
+
+void Parameter::setCategoriesForTrace()
+{
+	traces.setCategories(categories);
 }
 
 
