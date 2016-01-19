@@ -110,6 +110,7 @@ class CodonTable
 
         //--------------------R WRAPPERS--------------------//
         //Getter functions:
+#ifndef STANDALONE
         unsigned getTableIdR();
         std::vector<std::vector<unsigned>> getCodonIndexListingR();
         std::vector<std::vector<unsigned>> getCodonIndexListingWithoutReferenceR();
@@ -147,6 +148,8 @@ class CodonTable
         static std::vector <std::string> getCodonTableDefinitionR();
 
         static std::vector<std::string> getCodonArrayR();
+#endif
+
 };
 
 #endif

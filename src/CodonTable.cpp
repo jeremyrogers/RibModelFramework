@@ -1626,7 +1626,7 @@ CodonTable* CodonTable::getInstance()
 //--------------------R Wrappers--------------------//
 //--------------------------------------------------//
 
-
+#ifndef STANDALONE
 
 //------------------------------------//
 //----------Getter Functions----------//
@@ -1904,57 +1904,58 @@ std::vector<std::string> CodonTable::getCodonArrayR()
 // ---------------------------------------------------------------------------
 // ----------------------------- RCPP MODULE ---------------------------------
 // ---------------------------------------------------------------------------
-#ifndef STANDALONE
-#include <Rcpp.h>
-using namespace Rcpp;
+RCPP_EXPOSED_CLASS(CodonTable)
+
 RCPP_MODULE(CodonTable_mod)
 {
-	class_<CodonTable>( "CodonTable" )
+	class_<CodonTable>("CodonTable")
 		.constructor("Empty constructor - sets to codon table 1 and that amino acids should be split.")
 		.constructor<unsigned, std::string, bool, std::vector<std::string> >("Indicate what codon table to use and if amino acids should be split.")
 
-        //Getter functions:
+		//Getter functions:
 		.method("getTableId", &CodonTable::getTableIdR)
 		.method("getSplitAA", &CodonTable::getSplitAA)
 	//	.method("getAAToCodonMap" &CodonTable::getAAToCodonMap)
 	//	.method("getAAToCodonIndexMap" &CodonTable::getAAToCodonIndexMap)
 	//	.method("getAAToCodonMapWithoutReference", &CodonTable::getAAToCodonMapWithoutReference)
 	//	.method("getAAToCodonIndexMapWithoutReference", &CodonTable::getAAToCodonIndexMapWithoutReference)
-    //    .method("getCodonToAAMap", &CodonTable::getCodonToAAMap)
-    //    .method("getAAMap", &CodonTable::getAAMapR)
-    //    .method("getAAToNumCodonsMap", &CodonTable::getAAToNumCodonsMap)
+	//    .method("getCodonToAAMap", &CodonTable::getCodonToAAMap)
+	//    .method("getAAMap", &CodonTable::getAAMapR)
+	//    .method("getAAToNumCodonsMap", &CodonTable::getAAToNumCodonsMap)
 		.method("getGroupList", &CodonTable::getGroupList)
 
-        .method("getNumCodonsForAA", &CodonTable::getNumCodonsForAA)
-        .method("getNumCodonsForAAIndex", &CodonTable::getNumCodonsForAAIndexR)
+		.method("getNumCodonsForAA", &CodonTable::getNumCodonsForAA)
+		.method("getNumCodonsForAAIndex", &CodonTable::getNumCodonsForAAIndexR)
 
 
-        //Mapping operations:
-        .method("setupCodonTable", &CodonTable::setupCodonTable)
-        .method("AAToAAIndex", &CodonTable::AAToAAIndexR)
-        .method("AAIndexToCodonRange", &CodonTable::AAIndexToCodonRangeR)
-        .method("AAToCodonRange", &CodonTable::AAToCodonRangeR)
-        .method("AAToCodon", &CodonTable::AAToCodonR)
-        .method("indexToCodon", &CodonTable::indexToCodonR)
-        .method("codonToAA", &CodonTable::codonToAAR)
-        .method("codonToIndex", &CodonTable::codonToIndexR)
-        .method("codonToAAIndex", &CodonTable::codonToAAIndexR)
-        .method("indexToAA", &CodonTable::indexToAAR)
+		//Mapping operations:
+		.method("setupCodonTable", &CodonTable::setupCodonTable)
+		.method("AAToAAIndex", &CodonTable::AAToAAIndexR)
+		.method("AAIndexToCodonRange", &CodonTable::AAIndexToCodonRangeR)
+		.method("AAToCodonRange", &CodonTable::AAToCodonRangeR)
+		.method("AAToCodon", &CodonTable::AAToCodonR)
+		.method("indexToCodon", &CodonTable::indexToCodonR)
+		.method("codonToAA", &CodonTable::codonToAAR)
+		.method("codonToIndex", &CodonTable::codonToIndexR)
+		.method("codonToAAIndex", &CodonTable::codonToAAIndexR)
+		.method("indexToAA", &CodonTable::indexToAAR)
 		;
 
 		//Static functions:
+
+	function("getAminoAcidArrayWithoutSplit", &CodonTable::getAminoAcidArrayWithoutSplitR);
+	function("getNumCodonsPerAAForTable", &CodonTable::getNumCodonsPerAAForTableR);
+	function("getCodonTableDefinition", &CodonTable::getCodonTableDefinitionR);
+	function("getSer2", &CodonTable::getSer2R);
 		function("getAminoAcidArray", &CodonTable::getAminoAcidArrayR);
-        function("getAminoAcidArrayWithoutSplit", &CodonTable::getAminoAcidArrayWithoutSplitR);
-		function("getNumCodonsPerAAForTable", &CodonTable::getNumCodonsPerAAForTableR);
-		function("getCodonTableDefinition", &CodonTable::getCodonTableDefinitionR);
-	    function("getSer2", &CodonTable::getSer2R);
-	    function("getSer1", &CodonTable::getSer1R);
-	    function("getThr4_1", &CodonTable::getThr4_1R);
-	    function("getThr4_2", &CodonTable::getThr4_2R);
-	    function("getLeu1", &CodonTable::getLeu1R);
-	    function("getCodonArray", &CodonTable::getCodonArrayR);
-	    function("getInstance", &CodonTable::getInstance);
-	    function("createCodonTable", &CodonTable::createCodonTable);
+		function("getSer1", &CodonTable::getSer1R);
+		function("getThr4_1", &CodonTable::getThr4_1R);
+		function("getThr4_2", &CodonTable::getThr4_2R);
+		function("getLeu1", &CodonTable::getLeu1R);
+		function("getCodonArray", &CodonTable::getCodonArrayR);
+		function("getInstance", &CodonTable::getInstance);
+		function("createCodonTable", &CodonTable::createCodonTable);
+		;
 
 }
 #endif
