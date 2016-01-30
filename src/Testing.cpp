@@ -1155,3 +1155,20 @@ void testGenome(std::string testFileDir)
         std::cerr <<"Error in readFasta. Genomes are not equivelant.\n";
     }
 }
+
+
+void initMutation(std::vector<double> mutationValues, unsigned mixtureElement, std::string aa)
+{
+	//TODO: seperate out the R wrapper functionality and make the wrapper
+	//currentMutationParameter
+	CodonTable *ct = CodonTable::getInstance();
+	unsigned category = 0;
+	aa[0] = (char)std::toupper(aa[0]);
+	std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+	std::cout << "Category = " << category << std::endl;
+	std::cout << "Codon Range = \n";
+	for (unsigned i = 0; i < codonRange.size(); i++)
+	{
+		std::cout << codonRange[i] << "\n";
+	}
+}

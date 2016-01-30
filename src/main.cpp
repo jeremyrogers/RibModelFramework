@@ -377,7 +377,20 @@ int main()
 	std::string modelToRun = "ROC";
 	bool withPhi = false;
 
-
+	if (1)
+	{
+		std::vector <double> blah;
+		Genome genome(1, "ROC", true);
+		genome.readFasta("C:/Users/Jeremy/Documents/GitHub/RibModelDev/data/realGenomes/Skluyveri.fasta");
+		CodonTable *ct = CodonTable::getInstance();
+		std::vector <std::string> aaListing = ct->getGroupList();
+		for (unsigned i = 0; i < aaListing.size(); i++) {
+			initMutation(blah, 0, aaListing[i]);
+		}
+		//testSequenceSummary();
+		//testGene();
+		exit(4);
+	}
 	
 	std::cout << "Initializing MCMCAlgorithm object---------------" << std::endl;
 	int samples = 100;

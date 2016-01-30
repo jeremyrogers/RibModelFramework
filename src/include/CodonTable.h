@@ -148,6 +148,7 @@ class CodonTable
         static std::vector <std::string> getCodonTableDefinitionR();
 
         static std::vector<std::string> getCodonArrayR();
+
 #endif
 
 };

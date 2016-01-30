@@ -10,7 +10,7 @@
 void testSequenceSummary();
 void testGene();
 void testGenome(std::string testFileDir);
-
+void initMutation(std::vector<double> mutationValues, unsigned mixtureElement, std::string aa);
 
 
 
