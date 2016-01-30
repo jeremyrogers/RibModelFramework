@@ -817,6 +817,7 @@ void testSequenceSummary()
 void testGene()
 {
     int error = 0;
+	CodonTable *ct = CodonTable::getInstance();
 
     //--------------------------------//
     //------ getSequenceSummary ------//
@@ -830,7 +831,7 @@ void testGene()
         if (SS.getCodonCountForCodon(i) != GeneSS->getCodonCountForCodon(i))
         {
             std::cerr <<"Error with getSequenceSummary. Codon counts are incorrect";
-            std::cerr <<" for codon " << i <<", " << SequenceSummary::codonArray[i] <<".\n";
+            std::cerr <<" for codon " << i <<", " << ct->codonArray[i] <<".\n";
             std::cerr <<"Should return " << SS.getCodonCountForCodon(i) <<", but returns" << GeneSS->getCodonCountForCodon(i) <<"\n";
             error = 1;
         }
@@ -877,8 +878,9 @@ void testGene()
     }
 
 
-    unsigned AAListSize = (unsigned)SequenceSummary::aminoAcids().size();
-    for (unsigned i = 0; i < AAListSize; i++)
+    
+	// 26 for the maximum number of AAs
+    for (unsigned i = 0; i < 26; i++)
     {
         if (SS.getAACountForAA(i) != GeneSS->getAACountForAA(i))
         {

@@ -255,9 +255,11 @@ std::string Gene::toAASequence()
 
 unsigned Gene::getAACount(std::string aa)
 {
+	CodonTable *ct = CodonTable::getInstance();
+
     unsigned rv = 0;
 
-    if (SequenceSummary::aaToIndex.end() != SequenceSummary::aaToIndex.find(aa))
+    if (ct->AAToAAIndex(aa) != 42)
     {
         rv = geneData.getAACountForAA(aa);
     }
@@ -271,9 +273,10 @@ unsigned Gene::getAACount(std::string aa)
 
 unsigned Gene::getCodonCount(std::string& codon)
 {
+	CodonTable *ct = CodonTable::getInstance();
     unsigned rv = 0;
 
-    if (SequenceSummary::codonToIndexWithReference.end() != SequenceSummary::codonToIndexWithReference.find(codon))
+    if (ct->codonToIndex(codon) != 64)
     {
         rv = geneData.getCodonCountForCodon(codon);
     }
@@ -286,9 +289,10 @@ unsigned Gene::getCodonCount(std::string& codon)
 
 unsigned Gene::getRFPObserved(std::string codon)
 {
+	CodonTable *ct = CodonTable::getInstance();
     unsigned rv = 0;
 
-    if (SequenceSummary::codonToIndexWithReference.end() != SequenceSummary::codonToIndexWithReference.find(codon))
+    if (64 != ct->codonToIndex(codon))
     {
         rv = geneData.getRFPObserved(codon);
     }
@@ -302,12 +306,13 @@ unsigned Gene::getRFPObserved(std::string codon)
 
 std::vector <unsigned> Gene::getCodonPositions(std::string codon)
 {
+	CodonTable *ct = CodonTable::getInstance();
     std::vector <unsigned> rv;
     std::vector <unsigned> *tmp;
     tmp = &rv; //So if an invalid codon is given, tmp will point to an empty vector.
 
 
-    if (SequenceSummary::codonToIndexWithReference.end() != SequenceSummary::codonToIndexWithReference.find(codon))
+    if (64 != ct->codonToIndex(codon))
     {
         tmp = geneData.getCodonPositions(codon);
     }

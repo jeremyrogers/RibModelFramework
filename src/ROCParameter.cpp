@@ -120,9 +120,6 @@ void ROCParameter::initROCParameterSet()
     CovarianceMatrix m((numMutationCategories + numSelectionCategories) * numCodons);
     m.choleskiDecomposition();
     covarianceMatrix.push_back(m);
-	std::cout << aa << ":\n";
-	m.printCovarianceMatrix();
-	std::cout << std::endl;
   }
 }
 

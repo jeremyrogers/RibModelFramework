@@ -165,7 +165,17 @@ unsigned CodonTable::getNumCodonsForAAIndex(unsigned aaIndex, bool withoutRefere
 //--------------------------------------//
 unsigned CodonTable::AAToAAIndex(std::string aa)
 {
-	return AAMap.find(aa) -> second;
+	unsigned rv;
+	if (AAMap.find(aa) == AAMap.end())
+	{
+		std::cerr << "Warning: invalid AA in CodonTable::AAToAAIndex";
+		rv = 42; // 42 is the error check since AAs will go from 0 to around 30, but never above 40. We just like 42.
+	}
+	else
+	{
+		rv = AAMap.find(aa)->second;
+	}
+	return rv;
 }
 
 

@@ -175,7 +175,7 @@ initializeROCParameterObject <- function(genome, sphi, numMixtures, geneAssignme
   }
   
   parameter$mutation_prior_sd <- (mutation_prior_sd)
-  parameter <- initializeCovarianceMatricies(parameter, genome, numMixtures)
+  #parameter <- initializeCovarianceMatricies(parameter, genome, numMixtures)
   
   
   return(parameter)
