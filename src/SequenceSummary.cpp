@@ -234,87 +234,6 @@ char SequenceSummary::complimentNucleotide(char ch)
 
 
 #ifndef STANDALONE
-
-
-<<<<<<< HEAD
-//-------------------------------------------------//
-//---------- Data Manipulation Functions ----------//
-//-------------------------------------------------//
-
-unsigned SequenceSummary::getAACountForAAR(std::string aa)
-{
-	aa[0] = (char) std::toupper(aa[0]);
-	return getAACountForAA(aa);
-}
-
-
-unsigned SequenceSummary::getAACountForAAIndexR(unsigned aaIndex)
-{
-	return getAACountForAA(aaIndex);
-}
-
-
-unsigned SequenceSummary::getCodonCountForCodonR(std::string& codon)
-{
-	unsigned counts = 0;
-	codon[0] = (char) std::toupper(codon[0]);
-	codon[1] = (char) std::toupper(codon[1]);
-	codon[2] = (char) std::toupper(codon[2]);
-
-	if (codon.length() != 3)
-	{
-		Rf_warning("Codon: %s is not 3 characters! Returning 0 for codon counts!\n", codon.c_str());
-	}
-	else
-	{
-		counts = getCodonCountForCodon(codon);
-	}
-
-	return counts;
-}
-
-
-unsigned SequenceSummary::getCodonCountForCodonIndexR(unsigned codonIndex)
-{
-	return getCodonCountForCodon(codonIndex);
-}
-
-
-unsigned SequenceSummary::getRFPObservedForCodonR(std::string codon)
-{
-	codon[0] = (char) std::toupper(codon[0]);
-	codon[1] = (char) std::toupper(codon[1]);
-	codon[2] = (char) std::toupper(codon[2]);
-	return getRFPObserved(codon);
-
-}
-
-
-unsigned SequenceSummary::getRFPObservedForCodonIndexR(unsigned codonIndex)
-{
-	return getRFPObserved(codonIndex);
-}
-
-
-std::vector <unsigned> SequenceSummary::getCodonPositionsForCodonR(std::string codon)
-{
-    std::vector <unsigned> RV;
-	codon[0] = (char) std::toupper(codon[0]);
-	codon[1] = (char) std::toupper(codon[1]);
-	codon[2] = (char) std::toupper(codon[2]);
-	return *getCodonPositions(codon);
-}
-
-
-std::vector <unsigned> SequenceSummary::getCodonPositionsForCodonIndexR(unsigned codonIndex)
-{
-	return *getCodonPositions(codonIndex);
-}
-
-
-
-=======
->>>>>>> clandere/master
 //---------------------------------//
 //---------- RCPP Module ----------//
 //---------------------------------//
@@ -324,17 +243,8 @@ RCPP_MODULE(SequenceSummary_mod)
 {
 	class_<SequenceSummary>( "SequenceSummary" );
 
-<<<<<<< HEAD
 		//Static functions:
 		function("complimentNucleotide", &SequenceSummary::complimentNucleotide); //TEST THAT ONLY!
-=======
-		//Static Functions:
-		Rcpp::function("AAToCodon", &SequenceSummary::AAToCodon, List::create(_["aa"], _["forParamVector"] = false),
-				"returns a vector of codons for a given amino acid"); //Used, but will move into Codon Table
-		Rcpp::function("aminoAcids", &SequenceSummary::aminoAcids, "returns all Amino Acids as one letter code");
-		Rcpp::function("codons", &SequenceSummary::codons, "returns all codons or all reference codons");
-
->>>>>>> clandere/master
 }
 #endif
 
