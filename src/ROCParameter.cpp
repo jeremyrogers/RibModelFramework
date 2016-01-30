@@ -926,11 +926,17 @@ void ROCParameter::initMutation(std::vector<double> mutationValues, unsigned mix
 
 		unsigned category = getMutationCategory(mixtureElement);
 		aa[0] = (char) std::toupper(aa[0]);
-                std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
-                for (unsigned i = 0, j = 0; i < codonRange.size(); i++, j++)
+		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+		std::cout << "Category = " << category << std::endl;
+		std::cout << "Codon Range = \n";
+		for (unsigned i = 0; i < codonRange.size(); i++)
+		{
+			std::cout << codonRange[i] << "\n";
+		}
+		/*for (unsigned i = 0, j = 0; i < codonRange.size(); i++, j++)
 		{
 			currentCodonSpecificParameter[dM][category][codonRange[i]] = mutationValues[j];
-		}
+		}*/
 	}
 }
 
