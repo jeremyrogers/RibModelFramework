@@ -47,6 +47,17 @@ Genome::~Genome()
 }
 
 
+bool Genome::operator==(const Genome& other) const
+{
+	bool match = true;
+
+	if(!(this->genes == other.genes)) { match = false;} //Do a ! operation because only the gene comparison is implemented,
+	//not the != operator.
+	if(this->simulatedGenes != other.genes) { match = false;}
+	if(this->numGenesWithPhi != other.numGenesWithPhi) { match = false;}
+
+	return match;
+}
 
 
 
@@ -381,7 +392,7 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 								if (first)
 								{
 									first = false;
-									numPhi = (unsigned) it -> second -> observedPhiValues.size() + 1;
+									numPhi = (unsigned) it -> second -> observedSynthesisRateValues.size() + 1;
 									numGenesWithPhi.resize(numPhi, 0);
 								}
 								else
@@ -391,17 +402,17 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 #ifndef STANDALONE
 										Rf_error("Gene %d: has a different number of phi values given other genes: \n", geneID.c_str());
 										Rf_error("%d\n", it-> second -> getId().c_str());
-										Rf_error("%d\n", it-> second -> observedPhiValues.size() + 1);
+										Rf_error("%d\n", it-> second -> observedSynthesisRateValues.size() + 1);
 										Rf_error("Exiting function.\n");
 #else
 										std::cerr << geneID <<": has a different number of phi values given than other genes: ";
 										std::cerr << it-> second -> getId() <<"\n";
-										std::cerr << it-> second -> observedPhiValues.size() + 1 <<". Exiting function.\n";
+										std::cerr << it-> second -> observedSynthesisRateValues.size() + 1 <<". Exiting function.\n";
 #endif
 										exitfunction = true;
 										for (unsigned a = 0; a < getGenomeSize(); a++)
 										{
-											genes[a].observedPhiValues.clear();
+											genes[a].observedSynthesisRateValues.clear();
 										}
 										break;
 									}
@@ -431,7 +442,7 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 								numGenesWithPhi[count]++;
 							}
 
-							it->second->observedPhiValues.push_back(value); //make vector private again
+							it->second->observedSynthesisRateValues.push_back(value); //make vector private again
 							pos = pos2;
 							count++;
 						}
@@ -442,7 +453,7 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 				{
 					for (unsigned geneIndex = 0; geneIndex < getGenomeSize(); geneIndex++)
 					{
-						if (getGene(geneIndex).observedPhiValues.size() != numPhi)
+						if (getGene(geneIndex).observedSynthesisRateValues.size() != numPhi)
 						{
 							Gene *gene = &(getGene(geneIndex));
 #ifndef STANDALONE
@@ -452,7 +463,7 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 							std::cerr << "Gene # " << geneIndex <<" (" << gene->getId() <<") does not have any phi values.";
 							std::cerr << " Filling with -1's\n";
 #endif
-							gene->observedPhiValues.resize(numPhi, -1);
+							gene->observedSynthesisRateValues.resize(numPhi, -1);
 						}
 					}
 				}
@@ -484,12 +495,12 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 							if (first)
 							{
 								first = false;
-								numPhi = (unsigned) genes[geneIndex].observedPhiValues.size() + 1;
+								numPhi = (unsigned) genes[geneIndex].observedSynthesisRateValues.size() + 1;
 								numGenesWithPhi.resize(numPhi);
 								if (firstValue) numGenesWithPhi[0] = 1;
 							}
 							notDone = false;
-							if (numPhi != genes[geneIndex].observedPhiValues.size() + 1)
+							if (numPhi != genes[geneIndex].observedSynthesisRateValues.size() + 1)
 							{
 #ifndef STANDALONE
 								Rf_error("Gene %d: has a different number of phi values given than other genes. Exiting function\n", geneIndex);
@@ -498,7 +509,7 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 #endif
 								for (unsigned a = 0; a < getGenomeSize(); a++)
 								{
-									genes[a].observedPhiValues.clear();
+									genes[a].observedSynthesisRateValues.clear();
 								}
 								exitfunction = true;
 								break;
@@ -527,10 +538,10 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 							}
 							else
 							{
-								numGenesWithPhi[genes[geneIndex].observedPhiValues.size()]++;
+								numGenesWithPhi[genes[geneIndex].observedSynthesisRateValues.size()]++;
 							}
 						}
-						genes[geneIndex].observedPhiValues.push_back(value);
+						genes[geneIndex].observedSynthesisRateValues.push_back(value);
 						pos = pos2;
 					}
 					geneIndex++;
@@ -558,7 +569,7 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 							for (unsigned a = numGenesWithPhi[i]; a < getGenomeSize(); a++)
 							{
 								Gene *gene = &(getGene(a));
-								gene->observedPhiValues[i] = -1;
+								gene->observedSynthesisRateValues[i] = -1;
 							}
 						}
 					}
@@ -662,8 +673,8 @@ std::vector<unsigned> Genome::getCodonCountsPerGene(std::string codon)
 	for(unsigned i = 0u; i < genes.size(); i++)
 	{
 		Gene gene = genes[i];
-		SequenceSummary seqsum = gene.getSequenceSummary();
-		codonCounts[i] = seqsum.getCodonCountForCodon(codonIndex);
+		SequenceSummary *seqsum = gene.getSequenceSummary();
+		codonCounts[i] = seqsum -> getCodonCountForCodon(codonIndex);
 	}
 	return codonCounts;
 }

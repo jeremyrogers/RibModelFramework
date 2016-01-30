@@ -85,7 +85,7 @@ void ROCModel::calculateLogLikelihoodRatioPerGene(Gene& gene, unsigned geneIndex
 	double logLikelihood = 0.0;
 	double logLikelihood_proposed = 0.0;
 
-	SequenceSummary *seqsum = &gene.getSequenceSummary();
+	SequenceSummary *seqsum = gene.getSequenceSummary();
 
 	// get correct index for everything
 	unsigned mutationCategory = parameter->getMutationCategory(k);
@@ -172,7 +172,7 @@ void ROCModel::calculateLogLikelihoodRatioPerGroupingPerCategory(std::string gro
 	for(int i = 0; i < numGenes; i++)
 	{
 		gene = &genome.getGene(i);
-		seqsum = &gene->getSequenceSummary();
+		seqsum = gene->getSequenceSummary();
 		if(seqsum->getAACountForAA(aaIndex) == 0) continue;
 
 		// which mixture element does this gene belong to
@@ -260,7 +260,6 @@ void ROCModel::calculateLogLikelihoodRatioForHyperParameters(Genome &genome, uns
 			double noiseOffset = getNoiseOffset(i, false);
 			double noiseOffset_proposed = getNoiseOffset(i, true);
 			double observedSynthesisNoise = getObservedSynthesisNoise(i);
-
 #ifndef __APPLE__
 //#pragma omp parallel for reduction(+:lpr)
 #endif
@@ -619,16 +618,15 @@ void ROCModel::updateGibbsSampledHyperParameters(Genome &genome)
 				double obsPhi = genome.getGene(j).getObservedSynthesisRate(i);
 				if (obsPhi > -1.0) {
 					double sum = std::log(obsPhi) - noiseOffset - std::log(getSynthesisRate(j, mixtureAssignment, false));
+					//double sum = std::log(obsPhi) - std::log(getSynthesisRate(j, mixtureAssignment, false));
 					rate += sum * sum;
 				}
 			}
 			rate /= 2;
 			double rand = parameter->randGamma(shape, rate);
-			//std::cout << noiseOffset << "\t" << shape << "\t" << rate << "\t" << rand << "\t" << std::sqrt(1 / rand) << "\n";
-			parameter->setObservedSynthesisNoise(i, std::sqrt(1.0 / rand));
+			parameter->setObservedSynthesisNoise(i, std::sqrt(1 / rand));
 		}
 	}
-	//std::cout << "\n";
 }
 
 

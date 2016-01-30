@@ -31,6 +31,7 @@ class SequenceSummary
 		SequenceSummary(const std::string& sequence);
 		SequenceSummary(const SequenceSummary& other);
 		SequenceSummary& operator=(const SequenceSummary& other);
+		bool operator==(const SequenceSummary& other) const;
 		virtual ~SequenceSummary(); //TODO:Why is this virtual????
 
 
@@ -49,8 +50,8 @@ class SequenceSummary
 
 
 		//Other Functions:
-		void clear();
-		bool processSequence(const std::string& sequence);  //TODO: WHY return a bool
+		void clear(); //Tested
+		bool processSequence(const std::string& sequence);  //Tested TODO: WHY return a bool
 
 
 		//Static functions:
@@ -73,19 +74,7 @@ class SequenceSummary
 		std::vector <unsigned> getCodonPositionsForCodonIndexR(unsigned codonIndex); //TEST THAT ONLY!
 
 #endif //STANDALONE
-
-
 	protected:
 };
 
 #endif // SequenceSummary_H
-
-/*--------------------------------------------------------------------------------------------------
- *                                   !!!RCPP NOTE!!!
- * All functions are exposed to R. However, some functions are only exposed for the purpose of
-<<<<<<< HEAD:ribModel/src/include/SequenceSummary.h
- * unit testing (Test That). These functions can be accessed in R, but do not check indices or
- * potential problems with user input (such as codon strings being lower case). The two functions
- * that have R wrappers that only call the C++ function had to be implemented because RCPP cannot
- * deal with overloaded functions.
- -------------------------------------------------------------------------------------------------*/

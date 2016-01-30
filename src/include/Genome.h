@@ -32,8 +32,13 @@ class Genome
 
 		//Constructors & destructors:
 		explicit Genome();
+<<<<<<< HEAD
 		explicit Genome(unsigned codonTableId, std::string model, bool splitAA);
 		explicit Genome(unsigned codonTableId, std::string model, bool splitAA, std::vector <std::string> groupList);
+=======
+		Genome& operator=(const Genome& other);
+		bool operator==(const Genome& other) const;
+>>>>>>> clandere/master
 		virtual ~Genome();
 		Genome& operator=(const Genome& other);
 

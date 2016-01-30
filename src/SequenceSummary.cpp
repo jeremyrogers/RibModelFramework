@@ -67,6 +67,19 @@ SequenceSummary& SequenceSummary::operator=(const SequenceSummary& rhs)
 }
 
 
+bool SequenceSummary::operator==(const SequenceSummary& other) const
+{
+	bool match = true;
+
+	if (this->naa != other.naa) { match = false;}
+	if (this->ncodons != other.ncodons) { match = false;}
+	if (this->codonPositions != other.codonPositions) { match = false;}
+	if (this->RFPObserved != other.RFPObserved) { match = false;}
+
+	return match;
+}
+
+
 SequenceSummary::~SequenceSummary()
 {
 	//dtor
@@ -173,6 +186,7 @@ bool SequenceSummary::processSequence(const std::string& sequence)
 
 	CodonTable *ct = CodonTable::getInstance();
 	codonPositions.resize(64);
+
 	for (unsigned i = 0u; i < sequence.length(); i += 3)
 	{
 		codon = sequence.substr(i, 3);
@@ -222,6 +236,7 @@ char SequenceSummary::complimentNucleotide(char ch)
 #ifndef STANDALONE
 
 
+<<<<<<< HEAD
 //-------------------------------------------------//
 //---------- Data Manipulation Functions ----------//
 //-------------------------------------------------//
@@ -298,6 +313,8 @@ std::vector <unsigned> SequenceSummary::getCodonPositionsForCodonIndexR(unsigned
 
 
 
+=======
+>>>>>>> clandere/master
 //---------------------------------//
 //---------- RCPP Module ----------//
 //---------------------------------//
@@ -305,36 +322,19 @@ std::vector <unsigned> SequenceSummary::getCodonPositionsForCodonIndexR(unsigned
 
 RCPP_MODULE(SequenceSummary_mod)
 {
-	class_<SequenceSummary>( "SequenceSummary" )
+	class_<SequenceSummary>( "SequenceSummary" );
 
-
-		//Constructors & Destructors:
-		.constructor("empty constructor")
-		.constructor<std::string>("Initialize with a DNA Sequence. Sequence must be a multiple of 3")
-
-
-
-		//Data Manipulation Functions:
-		.method("getAACountForAA", &SequenceSummary::getAACountForAAR, "returns occurrence of a given amino acid in a sequence")
-		.method("getAACountForAAIndex", &SequenceSummary::getAACountForAAIndexR) //TEST THAT ONLY!
-		.method("getCodonCountForCodon", &SequenceSummary::getCodonCountForCodonR, "returns occurrence of given codon in sequence")
-		.method("getCodonCountForCodonIndex", &SequenceSummary::getCodonCountForCodonIndexR, "returns occurrence of given codon in sequence") //TEST THAT ONLY
-		.method("getRFPObservedForCodon", &SequenceSummary::getRFPObservedForCodonR)
-		.method("getRFPObservedForCodonIndex", &SequenceSummary::getRFPObservedForCodonIndexR) //TEST THAT ONLY!
-		.method("setRFPObserved", &SequenceSummary::setRFPObserved) //TEST THAT ONLY!
-		.method("getCodonPositionsForCodon", &SequenceSummary::getCodonPositionsForCodonR)
-		.method("getCodonPositionsForCodonIndex", &SequenceSummary::getCodonPositionsForCodonIndexR) //TEST THAT ONLY!
-
-
-
-		//Other Functions:
-		.method("clear", &SequenceSummary::clear, "removes all data from object")
-		.method("processSequence", &SequenceSummary::processSequence, "generates codon and amino acid count for sequence")
-		;
-
-
+<<<<<<< HEAD
 		//Static functions:
 		function("complimentNucleotide", &SequenceSummary::complimentNucleotide); //TEST THAT ONLY!
+=======
+		//Static Functions:
+		Rcpp::function("AAToCodon", &SequenceSummary::AAToCodon, List::create(_["aa"], _["forParamVector"] = false),
+				"returns a vector of codons for a given amino acid"); //Used, but will move into Codon Table
+		Rcpp::function("aminoAcids", &SequenceSummary::aminoAcids, "returns all Amino Acids as one letter code");
+		Rcpp::function("codons", &SequenceSummary::codons, "returns all codons or all reference codons");
+
+>>>>>>> clandere/master
 }
 #endif
 
