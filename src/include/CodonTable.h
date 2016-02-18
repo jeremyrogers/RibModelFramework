@@ -24,7 +24,6 @@ class CodonTable
 		std::map <std::string, std::vector <std::string>> AAToCodonMapWithoutReference;
 		std::map <std::string, std::vector <unsigned>> AAToCodonIndexMapWithoutReference;
         std::map <std::string, std::string> codonToAAMap; //Maps ALL codons for current conditions to AAs.
-        std::map <std::string, unsigned> AAMap; //Maps currently used AAs to indices.
         std::map <std::string, unsigned> AAToNumCodonsMap;
         //Maps currently used AAs to the number of codons that code for them.
 
@@ -67,7 +66,7 @@ class CodonTable
 
 
         //Mapping operations:
-        unsigned AAToAAIndex(std::string aa);
+        static unsigned AAToAAIndex(std::string aa);
         std::vector <unsigned> AAIndexToCodonRange(unsigned aaIndex, bool withoutReference = false);
         static std::string indexToCodon(unsigned index);
         std::vector <unsigned> AAToCodonRange(std::string aa, bool withoutReference = false);
@@ -75,7 +74,7 @@ class CodonTable
         std::string codonToAA(std::string& codon);
 		static unsigned codonToIndex(std::string& codon);
         unsigned codonToAAIndex(std::string& codon);
-        std::string indexToAA(unsigned aaIndex);
+        static std::string indexToAA(unsigned aaIndex);
 
 
 
@@ -94,10 +93,11 @@ class CodonTable
 
         static const std::vector <std::string> aminoAcidArray; //Index = AA
         static const std::vector <std::string> aminoAcidArrayWithoutSplit; //Array containing all non-split AAs.
-		static const std::map<std::string, unsigned> fullAAMap; 
         static const std::map<std::string, unsigned> codonToIndexWithReference; //Map of indices to all codons.
         static const std::string codonArray[]; //List of codons.
         static const std::vector <std::string> codonTableDefinition;
+        static const std::map <std::string, unsigned> AAMap; //Maps currently used AAs to indices.
+		
         //Description title for each codon table according to NCBI.
 
         static const unsigned numCodonsPerAAForTable[25][26]; //Sized on tableId and AA.

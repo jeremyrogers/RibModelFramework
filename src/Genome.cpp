@@ -339,7 +339,7 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 #else
 		std::cerr << "Error in Genome::readObservedPhiValues: Can not open file " << filename << "\n";
 #endif
-	}
+	} //End of opening a file and it resulting in a failure.
 	else
 	{
 		std::getline(input, tmp); //Trash the header line
@@ -351,7 +351,7 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 #else
 			std::cerr << "Genome is empty, function will not execute!\n";
 #endif
-		}
+		} //end of checking size constraint.
 		else
 		{
 			if (byId)
@@ -604,7 +604,7 @@ std::vector <Gene> Genome::getGenes(bool simulated)
 }
 
 
-unsigned Genome::getNumGenesWithPhi(unsigned index)
+unsigned Genome::getNumGenesWithPhiForIndex(unsigned index)
 {
 	return numGenesWithPhi[index];
 }
@@ -638,9 +638,9 @@ Gene& Genome::getGene(std::string id, bool simulated)
 //-------------------------------------//
 
 
-unsigned Genome::getGenomeSize()
+unsigned Genome::getGenomeSize(bool simulated)
 {
-	return (unsigned)genes.size();
+	return simulated ? (unsigned)simulatedGenes.size() : (unsigned)genes.size();
 }
 
 
@@ -681,6 +681,17 @@ std::vector<unsigned> Genome::getCodonCountsPerGene(std::string codon)
 
 
 
+
+
+//---------------------------------------//
+//---------- Testing Functions ----------//
+//---------------------------------------//
+
+
+std::vector<unsigned> Genome::getNumGenesWithPhi()
+{
+	return numGenesWithPhi;
+}
 
 
 
