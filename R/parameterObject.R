@@ -343,8 +343,7 @@ writeParameterToCSV.Rcpp_ROCParameter <- function(parameter, filename=NULL,
 #' 
 getCodonCountsForAA <- function(aa, genome){
   # get codon count for aa
-  ct = getInstance()
-  codons <- ct$AAToCodon(aa, F)
+  codons <- genome$AAToCodon(aa, F)
   codonCounts <- lapply(codons, function(codon){
     codonCounts <- genome$getCodonCountsPerGene(codon)
   })
@@ -404,11 +403,9 @@ initializeCovarianceMatricies <- function(parameter, genome, numMixtures) {
   numSelectionCategory <- parameter$numSelectionCategories
   
   phi <- parameter$getCurrentSynthesisRateForMixture(1) # phi values are all the same initially
-
-  names.aa <- aminoAcids()
- # ct <- getInstance()
-#  names.aa <- ct$getGroupList()
-  
+  #ct <- getInstance()
+  #names.aa <- ct$getGroupList()
+  names.aa <- genome$getGroupList()
   for(aa in names.aa){
     codonCounts <- getCodonCountsForAA(aa, genome)
     numCodons <- dim(codonCounts)[2] - 1

@@ -103,8 +103,7 @@ int main()
 	if (1)
 	{
 		//testSequenceSummary();
-		//testGene();
-		testGenome("/Users/roxasoath1/Desktop/RibModelDevScripts/RibModelDev/data/UnitTestingData");
+		testGene();
 		exit(1);
 	}
 	std::string modelToRun = "FONSE"; //can also be ROC or FONSE
@@ -380,7 +379,7 @@ int main()
 
 	if (1)
 	{
-		/*std::vector <double> blah;
+		std::vector <double> blah;
 		Genome genome(1, "ROC", true);
 		genome.readFasta("C:/Users/Jeremy/Documents/GitHub/RibModelDev/data/realGenomes/Skluyveri.fasta");
 		CodonTable *ct = CodonTable::getInstance();
@@ -388,10 +387,8 @@ int main()
 		for (unsigned i = 0; i < aaListing.size(); i++) {
 			initMutation(blah, 0, aaListing[i]);
 		}
-		*/
 		//testSequenceSummary();
 		//testGene();
-		testCodonTable();
 		exit(4);
 	}
 	

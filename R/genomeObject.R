@@ -13,8 +13,7 @@
 #' @return This function returns the Genome Rcpp object created.
 #' 
 initializeGenomeObject <- function(file, fasta=TRUE, expression.file=NULL, append=FALSE) {
-  genome <- new(Genome)
-  #genome <- new(Genome, 1, "ROC", TRUE) #CT ONLY
+  genome <- new(Genome, 1, "ROC", TRUE)
   if (fasta == TRUE) {
     genome$readFasta(file, append)
   } else {
@@ -34,7 +33,7 @@ initializeGenomeObject <- function(file, fasta=TRUE, expression.file=NULL, appen
 #' 
 #' @return returns the number of genes in a genome
 length.Rcpp_Genome <- function(x) {
-  return(x$getGenomeSize(F))
+  return(x$getGenomeSize())
 }
 
 summary.Rcpp_Genome <- function(genome) {

@@ -251,7 +251,7 @@ void CodonTable::setupCodonTable()
 	std::vector <std::vector <std::vector <std::string> > > ctl = splitAA ? codonTableListing : codonTableListingWithoutSplit;
 
 	for (unsigned groupIndex = 0; groupIndex < aminoAcidArray.size(); groupIndex++) {
-		unsigned AANum = AAMap.find(aminoAcidArray[groupIndex])->second; //TODO: error check
+		unsigned AANum = fullAAMap.find(aminoAcidArray[groupIndex])->second; //TODO: error check
 		AAToNumCodonsMap.insert(std::make_pair(aminoAcidArray[groupIndex], numCodonsPerAAForTable[tableId][AANum]));
 	}
 
@@ -259,7 +259,7 @@ void CodonTable::setupCodonTable()
 
 	for (unsigned groupIndex = 0; groupIndex < aminoAcidArray.size(); groupIndex++)
 	{
-		unsigned AAIndex = AAMap.find(aminoAcidArray[groupIndex])->second;
+		unsigned AAIndex = fullAAMap.find(aminoAcidArray[groupIndex])->second;
 		AAToCodonMap.insert(std::make_pair(aminoAcidArray[groupIndex], ctl[tableId][AAIndex]));
 		for (unsigned codonId = 0; codonId < ctl[tableId][AAIndex].size(); codonId++)
 		{
@@ -272,7 +272,7 @@ void CodonTable::setupCodonTable()
 
 	for (unsigned groupIndex = 0; groupIndex < aminoAcidArray.size(); groupIndex++)
 	{
-		unsigned AAIndex = AAMap.find(aminoAcidArray[groupIndex])->second;
+		unsigned AAIndex = fullAAMap.find(aminoAcidArray[groupIndex])->second;
 		if (ctl[tableId][AAIndex].size() != 0)
 		{
 			for (unsigned codonId = 0; codonId < ctl[tableId][AAIndex].size() - 1; codonId++)
@@ -321,7 +321,7 @@ bool CodonTable::checkIndex(unsigned index, unsigned lowerbound, unsigned upperb
 CodonTable* CodonTable::codonTable;
 const std::string CodonTable::Ser2 = "Z";
 const std::string CodonTable::Ser1 = "J";
-const std::string CodonTable::Thr4_1 = "O";
+const std::string CodonTable::Thr4_1 = "T";
 const std::string CodonTable::Thr4_2 = "B";
 const std::string CodonTable::Leu1 = "U";
 
@@ -331,23 +331,31 @@ const std::vector <std::string> CodonTable::aminoAcidArray = {
 const std::vector <std::string> CodonTable::aminoAcidArrayWithoutSplit = {
         "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y", "X"};
 
-const std::map<std::string, unsigned> CodonTable::codonToIndexWithReference = {{"GCT", 0}, {"GCC", 1}, {"GCA", 2},
-   {"GCG", 3}, {"TGT", 4}, {"TGC", 5}, {"GAT", 6}, {"GAC", 7}, {"GAA", 8}, {"GAG", 9}, {"TTT", 10}, {"TTC", 11},
-   {"GGT", 12}, {"GGC", 13}, {"GGA", 14}, {"GGG", 15}, {"CAT", 16}, {"CAC", 17}, {"ATT", 18}, {"ATC", 19}, {"ATA", 20},
-   {"AAA", 21}, {"AAG", 22}, {"TTA", 23}, {"TTG", 24}, {"CTT", 25}, {"CTC", 26}, {"CTA", 27}, {"CTG", 28}, {"ATG", 29},
-   {"AAT", 30}, {"AAC", 31}, {"CCT", 32}, {"CCC", 33}, {"CCA", 34}, {"CCG", 35}, {"CAA", 36}, {"CAG", 37}, {"CGT", 38},
-   {"CGC", 39}, {"CGA", 40}, {"CGG", 41}, {"AGA", 42}, {"AGG", 43}, {"TCT", 44}, {"TCC", 45}, {"TCA", 46}, {"TCG", 47},
-   {"ACT", 48}, {"ACC", 49}, {"ACA", 50}, {"ACG", 51}, {"GTT", 52}, {"GTC", 53}, {"GTA", 54}, {"GTG", 55}, {"TGG", 56},
-   {"TAT", 57}, {"TAC", 58}, {"AGT", 59}, {"AGC", 60}, {"TAA", 61}, {"TAG", 62}, {"TGA", 63}};
+const std::map<std::string, unsigned> CodonTable::fullAAMap = { { "A", 0 }, { "C", 1 }, { "D", 2 }, { "E", 3 }, { "F", 4 },
+{ "G", 5 }, { "H", 6 }, { "I", 7 }, { "K", 8 }, { "L", 9 }, { CodonTable::Leu1, 10}, { "M", 11 }, { "N", 12 }, { "P", 13 },
+{ "Q", 14 }, { "R", 15 }, { CodonTable::Ser1, 16 }, { CodonTable::Ser2, 17 }, { "S", 18 }, { "T", 19 }, { CodonTable::Thr4_1, 20 },
+{ CodonTable::Thr4_2, 21 }, { "V", 22 }, { "W", 23 }, { "Y", 24 }, { "X", 25 } };
 
-const std::string CodonTable::codonArray[] = 
-	{ "GCT", "GCC", "GCA", "GCG", "TGT", "TGC", "GAT", "GAC", "GAA", "GAG", "TTT", "TTC",
-   "GGT", "GGC", "GGA", "GGG", "CAT", "CAC", "ATT", "ATC", "ATA",
-   "AAA", "AAG", "TTA", "TTG", "CTT", "CTC", "CTA", "CTG", "ATG",
-   "AAT", "AAC", "CCT", "CCC", "CCA", "CCG", "CAA", "CAG", "CGT",
-   "CGC", "CGA", "CGG", "AGA", "AGG", "TCT", "TCC", "TCA", "TCG",
-   "ACT", "ACC", "ACA", "ACG", "GTT", "GTC", "GTA", "GTG", "TGG",
-   "TAT", "TAC", "AGT", "AGC", "TAA", "TAG", "TGA" };
+
+const std::map<std::string, unsigned> CodonTable::codonToIndexWithReference = {{"GCA", 0}, {"GCC", 1}, {"GCG", 2},
+   {"GCT", 3}, {"TGC", 4}, {"TGT", 5}, {"GAC", 6}, {"GAT", 7}, {"GAA", 8}, {"GAG", 9}, {"TTC", 10}, {"TTT", 11},
+   {"GGA", 12}, {"GGC", 13}, {"GGG", 14}, {"GGT", 15}, {"CAC", 16}, {"CAT", 17}, {"ATA", 18}, {"ATC", 19}, {"ATT", 20},
+   {"AAA", 21}, {"AAG", 22}, {"CTA", 23}, {"CTC", 24}, {"CTG", 25}, {"CTT", 26}, {"TTA", 27}, {"TTG", 28}, {"ATG", 29},
+   {"AAC", 30}, {"AAT", 31}, {"CCA", 32}, {"CCC", 33}, {"CCG", 34}, {"CCT", 35}, {"CAA", 36}, {"CAG", 37}, {"AGA", 38},
+   {"AGG", 39}, {"CGA", 40}, {"CGC", 41}, {"CGG", 42}, {"CGT", 43}, {"TCA", 44}, {"TCC", 45}, {"TCG", 46}, {"TCT", 47},
+   {"ACA", 48}, {"ACC", 49}, {"ACG", 50}, {"ACT", 51}, {"GTA", 52}, {"GTC", 53}, {"GTG", 54}, {"GTT", 55}, {"TGG", 56},
+   {"TAC", 57}, {"TAT", 58}, {"AGC", 59}, {"AGT", 60}, {"TAA", 61}, {"TAG", 62}, {"TGA", 63}};
+
+
+const std::string CodonTable::codonArray[] =
+        {"GCA", "GCC", "GCG", "GCT", "TGC", "TGT", "GAC", "GAT", "GAA", "GAG",
+         "TTC", "TTT", "GGA", "GGC", "GGG", "GGT", "CAC", "CAT", "ATA", "ATC",
+         "ATT", "AAA", "AAG", "CTA", "CTC", "CTG", "CTT", "TTA", "TTG", "ATG",
+         "AAC", "AAT", "CCA", "CCC", "CCG", "CCT", "CAA", "CAG", "AGA", "AGG",
+         "CGA", "CGC", "CGG", "CGT", "TCA", "TCC", "TCG", "TCT", "ACA", "ACC",
+         "ACG", "ACT", "GTA", "GTC", "GTG", "GTT", "TGG", "TAC", "TAT", "AGC",
+         "AGT", "TAA", "TAG", "TGA"};
+
 
 // http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
 const std::vector <std::string> CodonTable::codonTableDefinition = {"1. The Standard Code",
@@ -1624,346 +1632,3 @@ CodonTable* CodonTable::getInstance()
 {
     return codonTable;
 }
-
-
-
-//--------------------------------------------------//
-//--------------------R Wrappers--------------------//
-//--------------------------------------------------//
-
-#ifndef STANDALONE
-
-//------------------------------------//
-//----------Getter Functions----------//
-//------------------------------------//
-unsigned CodonTable::getTableIdR()
-{
-    return getTableId() + 1;
-}
-
-
-std::map <std::string, unsigned> CodonTable::getAAMapR()
-{
-    //Return the map where all the indices are start from 1.
-    std::map <std::string, unsigned>::iterator mit;
-    std::map <std::string, unsigned> AAMapCopy = getAAMap();
-    for(mit = AAMapCopy.begin(); mit != AAMapCopy.end(); mit++)
-    {
-        mit -> second++;
-    }
-
-    return AAMapCopy;
-}
-
-unsigned CodonTable::getNumCodonsForAAIndexR(unsigned aaIndex, bool withoutReference)
-{
-    unsigned numCodons = 0;
-    bool check = checkIndex(aaIndex, 1, (unsigned)groupList.size());
-    if (check)
-    {
-        aaIndex--;
-        numCodons = getNumCodonsForAAIndex(aaIndex, withoutReference);
-    }
-    return numCodons;
-}
-
-
-//--------------------------------------//
-//----------Mapping Operations----------//
-//--------------------------------------//
-unsigned CodonTable::AAToAAIndexR(std::string aa)
-{
-    unsigned aaIndex = 0;
-    aa[0] = (char)std::toupper(aa[0]);
-    if (AAMap.find(aa) == AAMap.end())
-    {
-        std::cerr <<"AA, " << aa <<" is not a valid AA for table " << getTableIdR() <<".\n";
-        std::cerr <<"Returning a value of 0.\n";
-    }
-    else
-    {
-        aaIndex = AAToAAIndex(aa) + 1; //The plus 1 is for R (1 indexed).
-    }
-
-    return aaIndex;
-}
-
-
-std::vector <unsigned> CodonTable::AAIndexToCodonRangeR(unsigned aaIndex, bool withoutReference)
-{
-    std::vector <unsigned> RV;
-    bool check = checkIndex(aaIndex, 1, (unsigned)groupList.size());
-    if (check)
-    {
-        aaIndex--;
-        RV = AAIndexToCodonRange(aaIndex, withoutReference);
-        for (unsigned i = 0; i < RV.size(); i++)
-        {
-            RV[i]++; //R needs 1 indexed answers.
-        }
-    }
-
-    return RV;
-}
-
-
-std::string CodonTable::indexToCodonR(unsigned index)
-{
-    std::string codon = "";
-    bool check;
-    check = checkIndex(index, 1, 64);
-    if (check)
-    {
-        index--;
-        codon = indexToCodon(index);
-    }
-    else
-    {
-        std::cerr <<"Returning a blank string\n";
-    }
-
-    return codon;
-}
-
-
-std::vector <unsigned> CodonTable::AAToCodonRangeR(std::string aa, bool withoutReference)
-{
-    std::vector <unsigned> RV;
-    aa[0] = (char)std::toupper(aa[0]);
-    if (AAMap.find(aa) == AAMap.end())
-    {
-        std::cerr <<"AA, " << aa <<" is not a valid AA for table " << getTableIdR() <<".\n";
-        std::cerr <<"Returning an empty vector.\n";
-    }
-    else
-    {
-        RV = AAToCodonRange(aa, withoutReference);
-        for (unsigned i = 0; i < RV.size(); i++)
-        {
-            RV[i]++; //R needs 1 indexed answers.
-        }
-    }
-    return RV; 
-}
-
-
-std::vector<std::string> CodonTable::AAToCodonR(std::string aa, bool withoutReference)
-{
-    std::vector <std::string> RV;
-    aa[0] = (char)std::toupper(aa[0]);
-    if (AAMap.find(aa) == AAMap.end())
-    {
-        std::cerr <<"AA, " << aa <<" is not a valid AA for table " << getTableIdR() <<".\n";
-        std::cerr <<"Returning an empty vector.\n";
-    }
-    else
-    {
-        RV = AAToCodon(aa, withoutReference);
-    }
-
-    return RV;
-}
-
-
-std::string CodonTable::codonToAAR(std::string& codon)
-{
-    std::string AA = "";
-    codon[0] = (char) std::toupper(codon[0]);
-    codon[1] = (char) std::toupper(codon[1]);
-    codon[2] = (char) std::toupper(codon[2]);
-    if (codonToIndexWithReference.find(codon) == codonToIndexWithReference.end())
-    {
-        std::cerr <<"Bad codon, " << codon <<", given. Returning a blank AA\n";
-    }
-    else
-    {
-        AA = codonToAA(codon);
-    }
-
-    return AA;
-}
-
-
-unsigned CodonTable::codonToIndexR(std::string& codon)
-{
-    unsigned index = 0;
-    codon[0] = (char) std::toupper(codon[0]);
-    codon[1] = (char) std::toupper(codon[1]);
-    codon[2] = (char) std::toupper(codon[2]);
-
-	index = codonToIndex(codon);
-	index++; //For R index purposes
-
-    return index;
-}
-
-unsigned CodonTable::codonToAAIndexR(std::string& codon)
-{
-    unsigned AAIndex = 0;
-    codon[0] = (char) std::toupper(codon[0]);
-    codon[1] = (char) std::toupper(codon[1]);
-    codon[2] = (char) std::toupper(codon[2]);
-
-    if (codonToIndexWithReference.find(codon) == codonToIndexWithReference.end())
-    {
-        std::cerr <<"Error with codon, " << codon <<". Not a valid codon, returning 0.\n";
-    }
-    else
-    {
-        AAIndex = codonToAAIndex(codon) + 1;
-    }
-
-    return AAIndex;
-}
-
-std::string CodonTable::indexToAAR(unsigned aaIndex)
-{
-    std::string AA = "";
-    bool check = checkIndex(aaIndex, 1, (unsigned)groupList.size());
-    if (check)
-    {
-        aaIndex--;
-        AA = indexToAA(aaIndex);
-    }
-
-    return AA;
-}
-
-//----------------------------------------------//
-//---------Static Variables & Functions---------//
-//----------------------------------------------//
-std::string CodonTable::getSer2R()
-{
-    return Ser2;
-}
-
-
-std::string CodonTable::getSer1R()
-{
-    return Ser1;
-}
-
-
-std::string CodonTable::getThr4_1R()
-{
-    return Thr4_1;
-}
-
-
-std::string CodonTable::getThr4_2R()
-{
-    return Thr4_2;
-}
-
-
-std::string CodonTable::getLeu1R()
-{
-    return Leu1;
-}
-
-
-std::vector <std::string> CodonTable::getAminoAcidArrayR()
-{
-    return aminoAcidArray;
-}
-
-
-std::vector <std::string> CodonTable::getAminoAcidArrayWithoutSplitR()
-{
-    return aminoAcidArrayWithoutSplit;
-}
-
-
-std::vector <std::vector <unsigned>> CodonTable::getNumCodonsPerAAForTableR()
-{
-    std::vector <std::vector <unsigned>> RV(25);
-
-    for (unsigned index = 0; index < 25; index++)
-    {
-        for (unsigned j = 0; j < 26; j++)
-        {
-            RV[index].push_back(numCodonsPerAAForTable[index][j]);
-        }
-    }
-
-    return RV;
-}
-//Hard coded values (25,26) are ok here since this is a
-//constant and there are no functions to get the size of an array.
-
-
-std::vector <std::string> CodonTable::getCodonTableDefinitionR()
-{
-    return codonTableDefinition;
-}
-
-
-std::vector<std::string> CodonTable::getCodonArrayR()
-{
-    std::vector<std::string> RV;
-    for (unsigned i = 0; i < 64; i++) RV.push_back(CodonTable::codonArray[i]);
-    return RV;
-}
-
-
-// ---------------------------------------------------------------------------
-// ----------------------------- RCPP MODULE ---------------------------------
-// ---------------------------------------------------------------------------
-RCPP_EXPOSED_CLASS(CodonTable)
-
-RCPP_MODULE(CodonTable_mod)
-{
-	class_<CodonTable>("CodonTable")
-		.constructor("Empty constructor - sets to codon table 1 and that amino acids should be split.")
-		.constructor<unsigned, std::string, bool, std::vector<std::string> >("Indicate what codon table to use and if amino acids should be split.")
-
-		//Getter functions:
-		.method("getTableId", &CodonTable::getTableIdR)
-		.method("getSplitAA", &CodonTable::getSplitAA)
-	//	.method("getAAToCodonMap" &CodonTable::getAAToCodonMap)
-	//	.method("getAAToCodonIndexMap" &CodonTable::getAAToCodonIndexMap)
-	//	.method("getAAToCodonMapWithoutReference", &CodonTable::getAAToCodonMapWithoutReference)
-		.method("getAAToCodonIndexMapWithoutReference", &CodonTable::getAAToCodonIndexMapWithoutReference)
-	//    .method("getCodonToAAMap", &CodonTable::getCodonToAAMap)
-	//    .method("getAAMap", &CodonTable::getAAMapR)
-	//    .method("getAAToNumCodonsMap", &CodonTable::getAAToNumCodonsMap)
-		.method("getGroupList", &CodonTable::getGroupList)
-
-		.method("getNumCodonsForAA", &CodonTable::getNumCodonsForAA)
-		.method("getNumCodonsForAAIndex", &CodonTable::getNumCodonsForAAIndexR)
-
-
-		//Mapping operations:
-		.method("setupCodonTable", &CodonTable::setupCodonTable)
-		.method("AAToAAIndex", &CodonTable::AAToAAIndexR)
-		.method("AAToAAIndexC", &CodonTable::AAToAAIndex)
-		.method("AAIndexToCodonRange", &CodonTable::AAIndexToCodonRangeR) 
-		.method("AAIndexToCodonRangeC", &CodonTable::AAIndexToCodonRange)
-		.method("AAToCodonRange", &CodonTable::AAToCodonRangeR)
-		.method("AAToCodonRangeC", &CodonTable::AAToCodonRange)
-		.method("AAToCodon", &CodonTable::AAToCodonR)
-		.method("indexToCodon", &CodonTable::indexToCodonR)
-		.method("codonToAA", &CodonTable::codonToAAR)
-		.method("codonToIndex", &CodonTable::codonToIndexR)
-		.method("codonToAAIndex", &CodonTable::codonToAAIndexR)
-		.method("indexToAA", &CodonTable::indexToAAR)
-		;
-
-		//Static functions:
-
-	function("getAminoAcidArrayWithoutSplit", &CodonTable::getAminoAcidArrayWithoutSplitR);
-	function("getNumCodonsPerAAForTable", &CodonTable::getNumCodonsPerAAForTableR);
-	function("getCodonTableDefinition", &CodonTable::getCodonTableDefinitionR);
-	function("getSer2", &CodonTable::getSer2R);
-		function("getAminoAcidArray", &CodonTable::getAminoAcidArrayR);
-		function("getSer1", &CodonTable::getSer1R);
-		function("getThr4_1", &CodonTable::getThr4_1R);
-		function("getThr4_2", &CodonTable::getThr4_2R);
-		function("getLeu1", &CodonTable::getLeu1R);
-		function("getCodonArray", &CodonTable::getCodonArrayR);
-		function("getInstance", &CodonTable::getInstance);
-		function("createCodonTable", &CodonTable::createCodonTable);
-		;
-
-}
-#endif
