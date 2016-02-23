@@ -1134,12 +1134,12 @@ void testGenome(std::string testFileDir)
     //-----------------------------------------//
     Genome genome;
 
-    Gene g1("TEST001", "TEST001 Test Gene", "ATGGCCACTATTGGGTCTTAG");
+    Gene g1("ATGGCCACTATTGGGTCTTAG", "TEST001", "TEST001 Test Gene");
     genome.addGene(g1, false);
 
 
     Gene test = genome.getGene("TEST001", false);
-    Gene test2 = genome.getGene(1, false);
+    Gene test2 = genome.getGene(0, false);
 
     if (test == g1 && test2 == g1) //checking both by string and index
     {
@@ -1152,7 +1152,6 @@ void testGenome(std::string testFileDir)
 
     //TODO: should I be testing the simulated feild with true?
     //TODO: also, should improper input be given (bad id/index).
-
 
     //------------------------------------//
     //------ getGenomeSize Function ------//
@@ -1217,8 +1216,8 @@ void testGenome(std::string testFileDir)
     //------ readObservedPhiValues Function ------//
     //--------------------------------------------//
 
-
-
+    std::string file = testFileDir + "/" + "readObservedPhiValues.csv";
+    genome.readObservedPhiValues(file, true);
 
 
     //----------------------------//
@@ -1254,7 +1253,7 @@ void testGenome(std::string testFileDir)
     //--------------------------------//
 
 
-    std::string file = testFileDir + "/" + "test.fasta";
+    file = testFileDir + "/" + "test.fasta";
     genome.readFasta(file, false);
 
     Gene g2("TEST002", "TEST002 Test Gene", "ATGACCGTAATTTTTTACTAG");

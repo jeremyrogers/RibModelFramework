@@ -404,8 +404,10 @@ initializeCovarianceMatricies <- function(parameter, genome, numMixtures) {
   numSelectionCategory <- parameter$numSelectionCategories
   
   phi <- parameter$getCurrentSynthesisRateForMixture(1) # phi values are all the same initially
-  ct <- getInstance()
-  names.aa <- ct$getGroupList()
+
+  names.aa <- aminoAcids()
+ # ct <- getInstance()
+#  names.aa <- ct$getGroupList()
   
   for(aa in names.aa){
     codonCounts <- getCodonCountsForAA(aa, genome)
