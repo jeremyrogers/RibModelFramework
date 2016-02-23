@@ -83,6 +83,9 @@ FONSEParameter::~FONSEParameter()
 
 void FONSEParameter::initFONSEParameterSet()
 {
+	CodonTable *ct = CodonTable::getInstance();
+	std::vector <std::string> aaListing = ct->getGroupList();
+
 	mutation_prior_sd = 0.35;
 	groupList = { "A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "N", "P", "Q", "R", "S", "T", "V", "Y", "Z" };
 	// proposal bias and std for codon specific parameter
@@ -112,11 +115,10 @@ void FONSEParameter::initFONSEParameterSet()
 		proposedCodonSpecificParameter[dOmega][i] = tmp;
 		currentCodonSpecificParameter[dOmega][i] = tmp;
 	}
-
-	for (unsigned i = 0; i < maxGrouping; i++)
+	for (unsigned i = 0; i < aaListing.size(); i++)
 	{
-		std::string aa = SequenceSummary::AminoAcidArray[i];
-		unsigned numCodons = SequenceSummary::GetNumCodonsForAA(aa, true);
+		std::string aa = aaListing[i];
+		unsigned numCodons = ct->getNumCodonsForAA(aa, true);
 		CovarianceMatrix m((numMutationCategories + numSelectionCategories) * numCodons);
 		m.choleskiDecomposition();
 		covarianceMatrix.push_back(m);
@@ -127,6 +129,7 @@ void FONSEParameter::initFONSEParameterSet()
 
 void FONSEParameter::initFONSEValuesFromFile(std::string filename)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	std::ifstream input;
 	std::vector <double> mat;
 	covarianceMatrix.resize(maxGrouping);
@@ -159,7 +162,7 @@ void FONSEParameter::initFONSEValuesFromFile(std::string filename)
 			{
 				getline(input, tmp);
 				//char aa = tmp[0];
-				cat = SequenceSummary::AAToAAIndex(tmp); // ????
+				cat = ct -> AAToAAIndex(tmp); // ????
 			}
 		}
 		else if (flag == 2)
@@ -270,6 +273,8 @@ void FONSEParameter::writeEntireRestartFile(std::string filename)
 
 void FONSEParameter::writeFONSERestartFile(std::string filename)
 {
+	CodonTable *ct = CodonTable::getInstance();
+	std::vector <std::string> aaListing = ct->getGroupList();
     std::ofstream out;
     out.open(filename.c_str(), std::ofstream::app);
     if (out.fail())
@@ -321,11 +326,11 @@ void FONSEParameter::writeFONSERestartFile(std::string filename)
         if (j % 10 != 0)
             oss << "\n";
     }
-	for (unsigned i = 0; i < groupList.size(); i++)
+	for (unsigned i = 0; i < aaListing.size(); i++)
 	{
-		std::string aa = groupList[i];
+		std::string aa = aaListing[i];
 		oss << ">covarianceMatrix:\n" << aa << "\n";
-		CovarianceMatrix m = covarianceMatrix[SequenceSummary::AAToAAIndex(aa)];
+		CovarianceMatrix m = covarianceMatrix[i];
 		std::vector<double>* tmp = m.getCovMatrix();
 		int size = m.getNumVariates();
 		for (unsigned k = 0; k < size * size; k++)
@@ -356,6 +361,7 @@ void FONSEParameter::initAllTraces(unsigned samples, unsigned num_genes)
 
 void FONSEParameter::initMutationCategories(std::vector<std::string> files, unsigned numCategories)
 {
+	CodonTable *ct = CodonTable::getInstance();
     for (unsigned category = 0; category < numCategories; category++)
     {
         //Open the file for the category
@@ -375,7 +381,7 @@ void FONSEParameter::initMutationCategories(std::vector<std::string> files, unsi
             //Get the Codon and Index
             std::size_t pos = tmp.find(",", 2); //Amino Acid and a comma will always be the first 2 characters
             std::string codon = tmp.substr(2, pos - 2);
-            unsigned codonIndex = SequenceSummary::codonToIndex(codon, true);
+            unsigned codonIndex = ct -> codonToIndex(codon);
             
             //get the value to store
             std::size_t pos2 = tmp.find(",", pos + 1);
@@ -392,6 +398,7 @@ void FONSEParameter::initMutationCategories(std::vector<std::string> files, unsi
 
 void FONSEParameter::initSelectionCategories(std::vector<std::string> files, unsigned numCategories)
 {
+	CodonTable *ct = CodonTable::getInstance();
     for (unsigned category = 0; category < numCategories; category++)
     {
         //Open the file for the category
@@ -411,7 +418,7 @@ void FONSEParameter::initSelectionCategories(std::vector<std::string> files, uns
             //Get the Codon and Index
             std::size_t pos = tmp.find(",", 2); //Amino Acid and a comma will always be the first 2 characters
             std::string codon = tmp.substr(2, pos - 2);
-            unsigned codonIndex = SequenceSummary::codonToIndex(codon, true);
+            unsigned codonIndex = ct -> codonToIndex(codon);
             
             //get the value to store
             std::size_t pos2 = tmp.find(",", pos + 1);
@@ -449,8 +456,9 @@ void FONSEParameter::updateCodonSpecificParameterTrace(unsigned sample, std::str
 
 CovarianceMatrix& FONSEParameter::getCovarianceMatrixForAA(std::string aa)
 {
+	CodonTable *ct = CodonTable::getInstance();
     aa[0] = (char)std::toupper(aa[0]);
-    unsigned aaIndex = SequenceSummary::aaToIndex.find(aa)->second;
+    unsigned aaIndex = ct -> AAToAAIndex(aa);
     return covarianceMatrix[aaIndex];
 }
 
@@ -462,43 +470,42 @@ CovarianceMatrix& FONSEParameter::getCovarianceMatrixForAA(std::string aa)
 
 double FONSEParameter::getCurrentCodonSpecificProposalWidth(unsigned aa)
 {
-	unsigned aaStart;
-	unsigned aaEnd;
-	SequenceSummary::AAIndexToCodonRange(aa, aaStart, aaEnd, false);
-    return std_csp[aaStart];
+	CodonTable *ct = CodonTable::getInstance();
+	std::vector <unsigned> codonRange = ct->AAIndexToCodonRange(aa, false);
+    return std_csp[codonRange[0]];
 }
 
 
 void FONSEParameter::proposeCodonSpecificParameter()
 {
-    for (unsigned k = 0; k < getGroupListSize(); k++)
+	CodonTable *ct = CodonTable::getInstance();
+	std::vector <std::string> aaListing = ct->getGroupList();
+    for (unsigned k = 0; k < aaListing.size(); k++)
     {
         std::vector<double> iidProposed;
-        std::string aa = getGrouping(k);
-		unsigned aaStart;
-		unsigned aaEnd;
-		SequenceSummary::AAToCodonRange(aa, aaStart, aaEnd, true);
-        unsigned numCodons = aaEnd - aaStart;
+		std::string aa = aaListing[k];
+		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+		unsigned numCodons = codonRange.size();
         for (unsigned i = 0u; i < numCodons * (numMutationCategories + numSelectionCategories); i++)
         {
             iidProposed.push_back(randNorm(0.0, 1.0));
         }
         
         std::vector<double> covaryingNums;
-        covaryingNums = covarianceMatrix[SequenceSummary::AAToAAIndex(aa)].transformIidNumersIntoCovaryingNumbers(iidProposed);
+        covaryingNums = covarianceMatrix[k].transformIidNumersIntoCovaryingNumbers(iidProposed);
         for (unsigned i = 0; i < numMutationCategories; i++)
         {
-            for (unsigned j = i * numCodons, l = aaStart; j < (i * numCodons) + numCodons; j++, l++)
+            for (unsigned j = i * numCodons, l = 0; j < (i * numCodons) + numCodons; j++, l++)
             {
-                proposedCodonSpecificParameter[dM][i][l] = currentCodonSpecificParameter[dM][i][l] + covaryingNums[j];
+                proposedCodonSpecificParameter[dM][i][codonRange[l]] = currentCodonSpecificParameter[dM][i][codonRange[l]] + covaryingNums[j];
             }
         }
         for (unsigned i = 0; i < numSelectionCategories; i++)
         {
-            for (unsigned j = i * numCodons, l = aaStart; j < (i * numCodons) + numCodons; j++, l++)
+            for (unsigned j = i * numCodons, l = 0; j < (i * numCodons) + numCodons; j++, l++)
             {
-                proposedCodonSpecificParameter[dOmega][i][l] = currentCodonSpecificParameter[dOmega][i][l]
-                + covaryingNums[(numMutationCategories * numCodons) + j];
+                proposedCodonSpecificParameter[dOmega][i][codonRange[l]] = currentCodonSpecificParameter[dOmega][i][codonRange[l]]
+	                + covaryingNums[(numMutationCategories * numCodons) + j];
             }
         }
     }
@@ -507,24 +514,23 @@ void FONSEParameter::proposeCodonSpecificParameter()
 
 void FONSEParameter::updateCodonSpecificParameter(std::string grouping)
 {
-	unsigned aaStart;
-	unsigned aaEnd;
-	SequenceSummary::AAToCodonRange(grouping, aaStart, aaEnd, true);
-    unsigned aaIndex = SequenceSummary::aaToIndex.find(grouping)->second;
+	CodonTable *ct = CodonTable::getInstance();
+	std::vector <unsigned> codonRange = ct->AAToCodonRange(grouping,true);
+	unsigned aaIndex = ct-> AAToAAIndex(grouping);
 	numAcceptForCodonSpecificParameters[aaIndex]++;
     
     for (unsigned k = 0u; k < numMutationCategories; k++)
     {
-        for (unsigned i = aaStart; i < aaEnd; i++)
+        for (unsigned i = 0; i < codonRange.size(); i++)
         {
-            currentCodonSpecificParameter[dM][k][i] = proposedCodonSpecificParameter[dM][k][i];
+            currentCodonSpecificParameter[dM][k][codonRange[i]] = proposedCodonSpecificParameter[dM][k][codonRange[i]];
         }
     }
     for (unsigned k = 0u; k < numSelectionCategories; k++)
     {
-        for (unsigned i = aaStart; i < aaEnd; i++)
+        for (unsigned i = 0; i < codonRange.size(); i++)
         {
-            currentCodonSpecificParameter[dOmega][k][i] = proposedCodonSpecificParameter[dOmega][k][i];
+            currentCodonSpecificParameter[dOmega][k][codonRange[i]] = proposedCodonSpecificParameter[dOmega][k][codonRange[i]];
         }
     }
 }
@@ -557,16 +563,13 @@ void FONSEParameter::setMutationPriorStandardDeviation(double _mutation_prior_sd
 void FONSEParameter::getParameterForCategory(unsigned category, unsigned paramType, std::string aa, bool proposal,
                                              double *returnSet)
 {
+	CodonTable *ct = CodonTable::getInstance();
     std::vector<double> *tempSet;
+	std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
 	tempSet = proposal ? &proposedCodonSpecificParameter[paramType][category] : &currentCodonSpecificParameter[paramType][category];
-	unsigned aaStart;
-	unsigned aaEnd;
-	SequenceSummary::AAToCodonRange(aa, aaStart, aaEnd, true);
-    
-    unsigned j = 0u;
-    for (unsigned i = aaStart; i < aaEnd; i++, j++)
+    for (unsigned i = 0, j = 0u; i < codonRange.size(); i++, j++)
     {
-        returnSet[j] = tempSet->at(i);
+        returnSet[j] = tempSet->at(codonRange[i]);
     }
 }
 
@@ -639,15 +642,15 @@ FONSEParameter::FONSEParameter(std::vector<double> stdDevSynthesisRate, unsigned
 
 void FONSEParameter::initCovarianceMatrix(SEXP _matrix, std::string aa)
 {
+	CodonTable *ct = CodonTable::getInstance();
     std::vector<double> tmp;
     NumericMatrix matrix(_matrix);
     
     for (unsigned i = 0u; i < aa.length(); i++)	aa[i] = (char)std::toupper(aa[i]);
     
-    unsigned aaIndex = SequenceSummary::aaToIndex.find(aa)->second;
+    unsigned aaIndex = ct->AAToAAIndex(aa);
     unsigned numRows = matrix.nrow();
     std::vector<double> covMatrix(numRows * numRows);
-    
     //NumericMatrix stores the matrix by column, not by row. The loop
     //below transposes the matrix when it stores it.
     unsigned index = 0;
@@ -667,6 +670,7 @@ void FONSEParameter::initMutation(std::vector<double> mutationValues, unsigned m
 {
     //TODO: seperate out the R wrapper functionality and make the wrapper
     //currentMutationParameter
+	CodonTable *ct = CodonTable::getInstance();
     bool check = checkIndex(mixtureElement, 1, numMixtures);
     if (check)
     {
@@ -675,12 +679,10 @@ void FONSEParameter::initMutation(std::vector<double> mutationValues, unsigned m
         
         unsigned category = getMutationCategory(mixtureElement);
         aa[0] = (char)std::toupper(aa[0]);
-	unsigned aaStart;
-	unsigned aaEnd;
-	SequenceSummary::AAToCodonRange(aa, aaStart, aaEnd, true);
-        for (unsigned i = aaStart, j = 0; i < aaEnd; i++, j++)
+		std::vector <unsigned> codonRange = ct -> AAToCodonRange(aa, true);
+        for (unsigned i = 0, j = 0; i < codonRange.size(); i++, j++)
         {
-            currentCodonSpecificParameter[dM][category][i] = mutationValues[j];
+            currentCodonSpecificParameter[dM][category][codonRange[i]] = mutationValues[j];
         }
     }
 }
@@ -690,20 +692,18 @@ void FONSEParameter::initSelection(std::vector<double> selectionValues, unsigned
 {
     //TODO: seperate out the R wrapper functionality and make the wrapper
     //currentSelectionParameter
+	CodonTable *ct = CodonTable::getInstance();
     bool check = checkIndex(mixtureElement, 1, numMixtures);
     if (check)
     {
         mixtureElement--;
         
         int category = getSelectionCategory(mixtureElement);
-        
+		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
         aa[0] = (char)std::toupper(aa[0]);
-	unsigned aaStart;
-	unsigned aaEnd;
-	SequenceSummary::AAToCodonRange(aa, aaStart, aaEnd, true);
-        for (unsigned i = aaStart, j = 0; i < aaEnd; i++, j++)
+        for (unsigned i = 0, j = 0; i < codonRange.size(); i++, j++)
         {
-            currentCodonSpecificParameter[dOmega][category][i] = selectionValues[j];
+            currentCodonSpecificParameter[dOmega][category][codonRange[i]] = selectionValues[j];
         }
     }
 }

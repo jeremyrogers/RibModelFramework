@@ -23,10 +23,6 @@ class RFPParameter: public Parameter {
 
 
 	public:
-		
-
-
-
 		//Constructors & Destructors:
 		explicit RFPParameter();
 		RFPParameter(std::string filename);

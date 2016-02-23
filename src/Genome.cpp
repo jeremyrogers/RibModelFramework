@@ -6,15 +6,27 @@ using namespace Rcpp;
 #endif
 
 
+std::vector <std::string> Genome::defaultVector;
 
 //--------------------------------------------------//
 // ---------- Constructors & Destructors ---------- //
 //--------------------------------------------------//
 
-
 Genome::Genome()
 {
-	//ctor
+	CodonTable::createCodonTable(1, "ROC", true);
+}
+
+
+Genome::Genome(unsigned codonTableId, std::string model, bool splitAA)
+{
+	CodonTable::createCodonTable(codonTableId, model, splitAA);
+}
+
+
+Genome::Genome(unsigned codonTableId, std::string model, bool splitAA, std::vector <std::string> groupList)
+{
+	CodonTable::createCodonTable(codonTableId, model, splitAA, groupList);
 }
 
 
@@ -210,6 +222,7 @@ void Genome::writeFasta (std::string filename, bool simulated)
 
 void Genome::readRFPFile(std::string filename)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	std::ifstream Fin;
 	Fin.open(filename.c_str());
 	if (Fin.fail())
@@ -260,7 +273,7 @@ void Genome::readRFPFile(std::string filename)
 			seq += codon;
 
 		prevID = ID;
-		unsigned index = SequenceSummary::codonToIndex(codon);
+		unsigned index = ct->codonToIndex(codon);
 		tmpGene.geneData.setRFPObserved(index, tmpRFP);
 	}
 
@@ -300,7 +313,7 @@ void Genome::writeRFPFile(std::string filename, bool simulated)
 
 		for (unsigned codonIndex = 0; codonIndex < 64; codonIndex++)
 		{
-			std::string codon = SequenceSummary::codonArray[codonIndex];
+			std::string codon = CodonTable::codonArray[codonIndex];
 
 			Fout << currentGene->getId() <<",";
 			Fout << currentGene->geneData.getRFPObserved(codonIndex) <<",";
@@ -326,7 +339,7 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 #else
 		std::cerr << "Error in Genome::readObservedPhiValues: Can not open file " << filename << "\n";
 #endif
-	} //End of opening a file and it resulting in a failure.
+	}
 	else
 	{
 		std::getline(input, tmp); //Trash the header line
@@ -338,7 +351,7 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 #else
 			std::cerr << "Genome is empty, function will not execute!\n";
 #endif
-		} //end of checking size constraint.
+		}
 		else
 		{
 			if (byId)
@@ -409,25 +422,20 @@ void Genome::readObservedPhiValues(std::string filename, bool byId)
 								val = tmp.substr(pos + 1, pos2 - (pos + 1));
 							}
 							double value = std::atof(val.c_str());
-
-							//If the value is negative, we set it and throw a warning message.
-							//If the value is nan or 0, we set it -1 and throw a warning message.
-							if (value <=  0)
+							if (value <=  0 || std::isnan(value))
 							{
+								if (value == 0 || std::isnan(value))
+								{
+									value = -1;
+								}
+								else
+								{
 #ifndef STANDALONE
-								Rf_warning("Negative phi value given - values should not be on the log scale. Negative Value stored.");
+									Rf_warning("Negative phi value given - values should not be on the log scale. Negative Value stored.");
 #else
-								std::cerr << "WARNING! Negative phi value given - values should not be on the log scale. Negative Value stored.";
+									std::cerr << "WARNING! Negative phi value given - values should not be on the log scale. Negative Value stored.";
 #endif
-							}
-							else if (value == 0 || std::isnan(value))
-							{
-								value = -1;
-#ifndef STANDALONE
-								Rf_warning("WARNING! Invalid or 0 phi value read - storing -1.");
-#else
-								std::cerr <<"WARNING! Invalid or 0 phi value read - storing -1.";
-#endif
+								}
 							}
 							else
 							{
@@ -596,7 +604,7 @@ std::vector <Gene> Genome::getGenes(bool simulated)
 }
 
 
-unsigned Genome::getNumGenesWithPhiForIndex(unsigned index)
+unsigned Genome::getNumGenesWithPhi(unsigned index)
 {
 	return numGenesWithPhi[index];
 }
@@ -630,9 +638,9 @@ Gene& Genome::getGene(std::string id, bool simulated)
 //-------------------------------------//
 
 
-unsigned Genome::getGenomeSize(bool simulated)
+unsigned Genome::getGenomeSize()
 {
-	return simulated ? (unsigned)simulatedGenes.size() : (unsigned)genes.size();
+	return (unsigned)genes.size();
 }
 
 
@@ -659,8 +667,9 @@ Genome Genome::getGenomeForGeneIndicies(std::vector <unsigned> indicies, bool si
 
 std::vector<unsigned> Genome::getCodonCountsPerGene(std::string codon)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	std::vector<unsigned> codonCounts(genes.size());
-	unsigned codonIndex = SequenceSummary::codonToIndex(codon);
+	unsigned codonIndex = ct->codonToIndex(codon);
 	for(unsigned i = 0u; i < genes.size(); i++)
 	{
 		Gene gene = genes[i];
@@ -674,17 +683,6 @@ std::vector<unsigned> Genome::getCodonCountsPerGene(std::string codon)
 
 
 
-//---------------------------------------//
-//---------- Testing Functions ----------//
-//---------------------------------------//
-
-
-std::vector<unsigned> Genome::getNumGenesWithPhi()
-{
-	return numGenesWithPhi;
-}
-
-
 
 
 // -----------------------------------------------------------------------------------------------------//
@@ -694,7 +692,6 @@ std::vector<unsigned> Genome::getNumGenesWithPhi()
 
 
 #ifndef STANDALONE
-
 
 bool Genome::checkIndex(unsigned index, unsigned lowerbound, unsigned upperbound)
 {
@@ -751,6 +748,18 @@ Genome Genome::getGenomeForGeneIndiciesR(std::vector <unsigned> indicies, bool s
 	return check ? getGenomeForGeneIndicies(indicies, simulated) : genome;
 }
 
+std::vector <std::string> Genome::getGroupListFromGenomeR()
+{
+    CodonTable *ct = CodonTable::getInstance();
+    return ct->getGroupList();
+}
+
+std::vector <std::string> Genome::AAToCodonFromGenomeR(std::string aa, bool withoutReference)
+{
+    CodonTable *ct = CodonTable::getInstance();
+    return ct->AAToCodon(aa, withoutReference);
+}
+
 
 
 
@@ -766,8 +775,8 @@ RCPP_MODULE(Genome_mod)
 {
 	class_<Genome>("Genome")
 		//Constructors & Destructors:
-		.constructor("empty constructor")
-
+		.constructor<unsigned, std::string, bool, std::vector <std::string> >()
+		.constructor<unsigned, std::string, bool>()
 
 		//File I/O Functions:
 		.method("readFasta", &Genome::readFasta, "reads a genome into the object")
@@ -795,6 +804,8 @@ RCPP_MODULE(Genome_mod)
 		.method("getGeneByIndex", &Genome::getGeneByIndex, "returns a gene for a given index")
 		.method("getGeneById", &Genome::getGeneById) //TEST THAT ONLY!
 		.method("getGenomeForGeneIndicies", &Genome::getGenomeForGeneIndiciesR, "returns a new genome based on the ones requested in the given vector")
+        .method("getGroupList", &Genome::getGroupListFromGenomeR)
+        .method("AAToCodon", &Genome::AAToCodonFromGenomeR)
 		;
 }
 #endif

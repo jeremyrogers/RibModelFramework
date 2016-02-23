@@ -817,6 +817,7 @@ void testSequenceSummary()
 void testGene()
 {
     int error = 0;
+	CodonTable *ct = CodonTable::getInstance();
 
     //--------------------------------//
     //------ getSequenceSummary ------//
@@ -830,7 +831,7 @@ void testGene()
         if (SS.getCodonCountForCodon(i) != GeneSS->getCodonCountForCodon(i))
         {
             std::cerr <<"Error with getSequenceSummary. Codon counts are incorrect";
-            std::cerr <<" for codon " << i <<", " << SequenceSummary::codonArray[i] <<".\n";
+            std::cerr <<" for codon " << i <<", " << ct->codonArray[i] <<".\n";
             std::cerr <<"Should return " << SS.getCodonCountForCodon(i) <<", but returns" << GeneSS->getCodonCountForCodon(i) <<"\n";
             error = 1;
         }
@@ -877,8 +878,9 @@ void testGene()
     }
 
 
-    unsigned AAListSize = (unsigned)SequenceSummary::aminoAcids().size();
-    for (unsigned i = 0; i < AAListSize; i++)
+    
+	// 26 for the maximum number of AAs
+    for (unsigned i = 0; i < 26; i++)
     {
         if (SS.getAACountForAA(i) != GeneSS->getAACountForAA(i))
         {
@@ -1126,136 +1128,16 @@ void testGenome(std::string testFileDir)
 {
 
     int error = 0;
-
-    //-----------------------------------------//
-    //------ addGene & getGene Functions ------//
-    //-----------------------------------------//
-    Genome genome;
-
-    Gene g1("ATGGCCACTATTGGGTCTTAG", "TEST001", "TEST001 Test Gene");
-    genome.addGene(g1, false);
-
-
-    Gene test = genome.getGene("TEST001", false);
-    Gene test2 = genome.getGene(0, false);
-
-    if (test == g1 && test2 == g1) //checking both by string and index
-    {
-        std::cout <<"Genome addGene & getGene --- Pass\n";
-    }
-    else
-    {
-        std::cerr <<"Error in either addGene or getGene\n";
-    }
-
-    //TODO: should I be testing the simulated feild with true?
-    //TODO: also, should improper input be given (bad id/index).
-
-    //------------------------------------//
-    //------ getGenomeSize Function ------//
-    //------------------------------------//
-
-    if (1 != genome.getGenomeSize(false))
-    {
-        std::cerr <<"Error with getGenomesize(false). Should return 1, returns ";
-        std::cerr << genome.getGenomeSize(false) <<".\n";
-        error = 1;
-    }
-
-    if (0 != genome.getGenomeSize(true))
-    {
-        std::cerr <<"Error with getGenomesize(true). Should return 0, returns ";
-        std::cerr << genome.getGenomeSize(true) <<".\n";
-        error = 1;
-    }
-
-    if (!error)
-    {
-        std::cout <<"Genome getGenomeSize --- Pass\n";
-    }
-    else
-    {
-        error = 0; //Reset for next function.
-    }
-
-
-    //-------------------------------//
-    //------ getGenes Function ------//
-    //-------------------------------//
-
-    std::vector<Gene> testVec;
-    testVec.push_back(g1);
-
-    if(!(testVec == genome.getGenes(false)))
-    {
-        std::cerr <<"Error with getGenes(false).\n";
-        error = 1;
-    }
-
-    testVec.clear();
-
-    if(!(testVec == genome.getGenes(true)))
-    {
-        std::cerr <<"Error with getGenes(true).\n";
-        error = 1;
-    }
-
-    if (!error)
-    {
-        std::cout <<"Genome getGenes --- Pass\n";
-    }
-    else
-    {
-        error = 0; //Reset for next function.
-    }
-
-
-    //--------------------------------------------//
-    //------ readObservedPhiValues Function ------//
-    //--------------------------------------------//
-
-    std::string file = testFileDir + "/" + "readObservedPhiValues.csv";
-    genome.readObservedPhiValues(file, true);
-
-
-/*
-
-    //----------------------------//
-    //------ clear Function ------//
-    //----------------------------//
-
-    genome.clear();
-
-    if (genome.getGenes(false) == testVec && genome.getGenes(true) == testVec)
-    {
-        std::cerr <<"Error with clear. Genes or simulatedGenes are not empty.\n";
-        error = 1;
-    }
-
-    std::vector <unsigned> emptyVec;
-    if (emptyVec != genome.getNumGenesWithPhi())
-    {
-        std::cerr <<"Error with clear. NumGenesWithPhi is not empty.\n";
-        error = 1;
-    }
-
-    if (!error)
-    {
-        std::cout <<"Genome getGenes --- Pass\n";
-    }
-    else
-    {
-        error = 0; //Reset for next function.
-    }
-
     //--------------------------------//
     //------ readFasta Function ------//
     //--------------------------------//
 
 
-    file = testFileDir + "/" + "test.fasta";
+    Genome genome;
+    std::string file = testFileDir + "/" + "test.fasta";
     genome.readFasta(file, false);
 
+    Gene g1("TEST001", "TEST001 Test Gene", "ATGGCCACTATTGGGTCTTAG");
     Gene g2("TEST002", "TEST002 Test Gene", "ATGACCGTAATTTTTTACTAG");
     Gene g3("TEST003", "TEST003 Test Gene", "ATGGTCTACTTTCTGACATAG");
 
@@ -1272,5 +1154,21 @@ void testGenome(std::string testFileDir)
     {
         std::cerr <<"Error in readFasta. Genomes are not equivelant.\n";
     }
-*/
+}
+
+
+void initMutation(std::vector<double> mutationValues, unsigned mixtureElement, std::string aa)
+{
+	//TODO: seperate out the R wrapper functionality and make the wrapper
+	//currentMutationParameter
+	CodonTable *ct = CodonTable::getInstance();
+	unsigned category = 0;
+	aa[0] = (char)std::toupper(aa[0]);
+	std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+	std::cout << "Category = " << category << std::endl;
+	std::cout << "Codon Range = \n";
+	for (unsigned i = 0; i < codonRange.size(); i++)
+	{
+		std::cout << codonRange[i] << "\n";
+	}
 }

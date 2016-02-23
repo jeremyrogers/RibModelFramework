@@ -8,6 +8,9 @@
 #include <sstream>
 #include <cmath>
 
+#include "Gene.h"
+#include "CodonTable.h"
+
 #ifndef STANDALONE
 #include <Rcpp.h>
 #endif
@@ -23,10 +26,14 @@ class Genome
 		std::vector<Gene> simulatedGenes;
 		std::vector <unsigned> numGenesWithPhi;
 
+		static std::vector <std::string> defaultVector;
+
 	public:
 
-		//Constructors & Destructors:
+		//Constructors & destructors:
 		explicit Genome();
+		explicit Genome(unsigned codonTableId, std::string model, bool splitAA);
+		explicit Genome(unsigned codonTableId, std::string model, bool splitAA, std::vector <std::string> groupList);
 		Genome& operator=(const Genome& other);
 		bool operator==(const Genome& other) const;
 		virtual ~Genome();
@@ -43,20 +50,16 @@ class Genome
 		//Gene Functions:
 		void addGene(const Gene& gene, bool simulated = false);
 		std::vector <Gene> getGenes(bool simulated = false);
-		unsigned getNumGenesWithPhiForIndex(unsigned index);
+		unsigned getNumGenesWithPhi(unsigned index);
 		Gene& getGene(unsigned index, bool simulated = false);
 		Gene& getGene(std::string id, bool simulated = false);
 
 
 		//Other Functions:
-		unsigned getGenomeSize(bool simulated = false);
+		unsigned getGenomeSize();
 		void clear();
 		Genome getGenomeForGeneIndicies(std::vector <unsigned> indicies, bool simulated = false); //NOTE: If simulated is true, it will return a genome with the simulated genes, but the returned genome's genes vector will contain the simulated genes.
 		std::vector<unsigned> getCodonCountsPerGene(std::string codon);
-
-
-		//Testing Functions:
-		std::vector <unsigned> getNumGenesWithPhi();
 
 
 
@@ -64,10 +67,13 @@ class Genome
 
 #ifndef STANDALONE
 
+
 		bool checkIndex(unsigned index, unsigned lowerbound, unsigned upperbound);
 		Gene& getGeneByIndex(unsigned index, bool simulated = false);
 		Gene& getGeneById(std::string ID, bool simulated = false);
 		Genome getGenomeForGeneIndiciesR(std::vector <unsigned> indicies, bool simulated = false);
+        std::vector <std::string> getGroupListFromGenomeR();
+        std::vector <std::string> AAToCodonFromGenomeR(std::string, bool withoutReference);
 
 #endif //STANDALONE
 

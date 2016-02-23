@@ -9,35 +9,24 @@
 #include <vector>
 #include <array>
 #include <iostream>
+#include "CodonTable.h"
 
 #ifndef STANDALONE
 #include <Rcpp.h>
 #endif
-#include <array>
 
 class SequenceSummary
 {
 	private:
 
-		std::array<unsigned, 64> ncodons;
-		std::array<unsigned, 64> RFPObserved;
-		std::array<unsigned, 22> naa;
+		unsigned ncodons[64];
+		unsigned RFPObserved[64];
+		unsigned naa[26];
 		std::vector <std::vector <unsigned>> codonPositions;
 
 	public:
 
-		//Static Member Variables:
-		static const std::string Ser2;
-		static const std::vector<std::string> AminoAcidArray;
-		static const std::string codonArray[];
-		static const std::string codonArrayParameter[];
-		static const std::map<std::string, unsigned> aaToIndex;
-		static const std::map<std::string, unsigned> codonToIndexWithReference;
-		static const std::map<std::string, unsigned> codonToIndexWithoutReference;
-
-
-
-		//Constructors & Destructors:
+		//Constructors & destructors:
 		explicit SequenceSummary();
 		SequenceSummary(const std::string& sequence);
 		SequenceSummary(const SequenceSummary& other);
@@ -65,25 +54,27 @@ class SequenceSummary
 		bool processSequence(const std::string& sequence);  //Tested TODO: WHY return a bool
 
 
-		//Static Functions:
-		static unsigned AAToAAIndex(std::string aa); //Moving to CT
-		static void AAIndexToCodonRange(unsigned aaIndex, unsigned& start, unsigned& end, bool forParamVector = false); //Moving to CT
-		static void AAToCodonRange(std::string aa, unsigned& start, unsigned& end, bool forParamVector = false); //Moving to CT
-		static std::vector<std::string> AAToCodon(std::string aa, bool forParamVector = false); //Moving to CT, but used in R currently
-		static std::string codonToAA(std::string& codon); //Moving to CT
-		static unsigned codonToIndex(std::string& codon, bool forParamVector = false); //Moving to CT
-		static unsigned codonToAAIndex(std::string& codon); //Moving to CT
-		static std::string indexToAA(unsigned aaIndex); //Moving to CT
-		static std::string indexToCodon(unsigned index, bool forParamVector = false); //Moving to CT
-		static unsigned GetNumCodonsForAA(std::string& aa, bool forParamVector = false); //Moving to CT
-		static char complimentNucleotide(char ch); //TODO: Testing (c++)
-		static std::vector<std::string> aminoAcids(); //Moving to CT, but used in R currently
-		static std::vector<std::string> codons(); //Moving to CT, but used in R currently
+		//Static functions:
+		static char complimentNucleotide(char ch);
 
 
+
+		//R Section:
+
+#ifndef STANDALONE
+
+		//Data Manipulation Functions:
+		unsigned getAACountForAAR(std::string aa);
+		unsigned getAACountForAAIndexR(unsigned aaIndex); //TEST THAT ONLY!
+		unsigned getCodonCountForCodonR(std::string& codon);
+		unsigned getCodonCountForCodonIndexR(unsigned codonIndex); //TEST THAT ONLY!
+		unsigned getRFPObservedForCodonR(std::string codon);
+		unsigned getRFPObservedForCodonIndexR(unsigned codonIndex); //TEST THAT ONLY!
+		std::vector <unsigned> getCodonPositionsForCodonR(std::string codon);
+		std::vector <unsigned> getCodonPositionsForCodonIndexR(unsigned codonIndex); //TEST THAT ONLY!
+
+#endif //STANDALONE
 	protected:
 };
 
 #endif // SequenceSummary_H
-
-

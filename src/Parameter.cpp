@@ -154,7 +154,7 @@ void Parameter::initParameterSet(std::vector<double> _stdDevSynthesisRate, unsig
 #endif
 
 	mutationSelectionState = _mutationSelectionState;
-	numParam = ((splitSer) ? 40 : 41);
+	numParam = 64;
 	numMixtures = _numMixtures;
 	stdDevSynthesisRate.resize(_stdDevSynthesisRate.size());
 	stdDevSynthesisRate_proposed.resize(_stdDevSynthesisRate.size());
@@ -168,7 +168,7 @@ void Parameter::initParameterSet(std::vector<double> _stdDevSynthesisRate, unsig
 
 	numAcceptForStdDevSynthesisRate = 0u;
 	std_csp.resize(numParam, 0.1);
-	numAcceptForCodonSpecificParameters.resize(maxGrouping, 0u);
+	numAcceptForCodonSpecificParameters.resize(26, 0u);
 	// proposal bias and std for phi values
 	bias_phi = 0;
 
@@ -567,7 +567,7 @@ void Parameter::InitializeSynthesisRate(Genome& genome, double sd_phi)
 	for(unsigned i = 0u; i < genomeSize; i++)
 	{
 		index[i] = i;
-		scuoValues[i] = calculateSCUO( genome.getGene(i), 22 ); //This used to be maxGrouping, but RFP model will not work that way
+		scuoValues[i] = calculateSCUO( genome.getGene(i)); //This used to be maxGrouping, but RFP model will not work that way
 		expression[i] = Parameter::randLogNorm(-(sd_phi * sd_phi) / 2, sd_phi);
 	}
 	quickSortPair(scuoValues, index, 0, genomeSize);
@@ -1010,23 +1010,26 @@ unsigned Parameter::getMixtureAssignment(unsigned gene)
 
 std::vector <std::vector <double> > Parameter::calculateSelectionCoefficients(unsigned sample, unsigned mixture)
 {
+	CodonTable *ct = CodonTable::getInstance();
+	std::vector <std::string> aaListing = ct->getGroupList();
+	
 	unsigned numGenes = mixtureAssignment.size();
 	std::vector<std::vector<double>> selectionCoefficients;
 	selectionCoefficients.resize(numGenes);
 	for (unsigned i = 0; i < numGenes; i++)
 	{
-		for (unsigned j = 0; j < getGroupListSize(); j++)
+		for (unsigned j = 0; j < aaListing.size(); j++)
 		{
 
 			std::string aa = getGrouping(j);
 			unsigned aaStart;
 			unsigned aaEnd;
-			SequenceSummary::AAToCodonRange(aa, aaStart, aaEnd, true);
-				std::vector<double> tmp;
+			std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+			std::vector<double> tmp;
 			double minValue = 0.0;
-			for (unsigned k = aaStart; k < aaEnd; k++)
+			for (unsigned k = 0; k < codonRange.size(); k++)
 			{
-				std::string codon = SequenceSummary::codonArrayParameter[k];
+				std::string codon = ct->codonArray[codonRange[k]];
 				tmp.push_back(getCodonSpecificPosteriorMean(sample, mixture, codon, 1));
 				if (tmp[k] < minValue)
 				{
@@ -1154,33 +1157,36 @@ void Parameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptationWidt
 	std::cout << "Acceptance rate for Codon Specific Parameter\n";
 	std::cout << "\tAA\tacc.rat\tProp.Width\n";
 #endif
-	for (unsigned i = 0; i < groupList.size(); i++)
+
+	CodonTable *ct = CodonTable::getInstance();
+	std::vector <std::string> aaListing = ct->getGroupList();
+
+
+	for (unsigned i = 0; i < aaListing.size(); i++)
 	{
-		std::string aa = groupList[i];
-		unsigned aaIndex = SequenceSummary::AAToAAIndex(aa);
+		std::string aa = aaListing[i];
+		unsigned aaIndex = ct->AAToAAIndex(aa);
 		double acceptanceLevel = (double)numAcceptForCodonSpecificParameters[aaIndex] / (double)adaptationWidth;
-		traces.updateCodonSpecificAcceptanceRatioTrace(aaIndex, acceptanceLevel);
-		unsigned aaStart;
-		unsigned aaEnd;
-		SequenceSummary::AAToCodonRange(aa, aaStart, aaEnd, true);
+		traces.updateCodonSpecificAcceptanceRatioTrace(i, acceptanceLevel);
+		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
 #ifndef STANDALONE
-		Rprintf("\t%s:\t%f\t%f\n", aa.c_str(), acceptanceLevel, std_csp[aaStart]);
+		Rprintf("\t%s:\t%f\t%f\n", aa.c_str(), acceptanceLevel, std_csp[codonRange[0]]);
 #else
-		std::cout << "\t" << aa << ":\t" << acceptanceLevel << "\t" << std_csp[aaStart] << "\n";
+		std::cout << "\t" << aa << ":\t" << acceptanceLevel << "\t" << std_csp[codonRange[0]] << "\n";
 #endif
-		for (unsigned k = aaStart; k < aaEnd; k++)
+		for (unsigned k = 0; k < codonRange.size(); k++)
 		{
 			if (acceptanceLevel < 0.2)
 			{
-				covarianceMatrix[aaIndex] *= 0.8;
-				covarianceMatrix[aaIndex].choleskiDecomposition();
-				std_csp[k] *= 0.8;
+				covarianceMatrix[i] *= 0.8;
+				covarianceMatrix[i].choleskiDecomposition();
+				std_csp[codonRange[k]] *= 0.8;
 			}
 			if (acceptanceLevel > 0.3)
 			{
-				covarianceMatrix[aaIndex] *= 1.2;
-				covarianceMatrix[aaIndex].choleskiDecomposition();
-				std_csp[k] *= 1.2;
+				covarianceMatrix[i] *= 1.2;
+				covarianceMatrix[i].choleskiDecomposition();
+				std_csp[codonRange[k]] *= 1.2;
 			}
 		}
 		numAcceptForCodonSpecificParameters[aaIndex] = 0u;
@@ -1543,39 +1549,37 @@ void Parameter::swap(int& a, int& b)
 // Wan et al. CodonO: a new informatics method for measuring synonymous codon usage bias within and across genomes
 // International Journal of General Systems, Vol. 35, No. 1, February 2006, 109–125
 // http://www.tandfonline.com/doi/pdf/10.1080/03081070500502967
-double Parameter::calculateSCUO(Gene& gene, unsigned maxAA)
+double Parameter::calculateSCUO(Gene& gene)
 {
+	CodonTable *ct = CodonTable::getInstance();
+	std::vector <std::string> aaListing = ct->getGroupList();
 	SequenceSummary *seqsum = gene.getSequenceSummary();
 
 	double totalDegenerateAACount = 0.0;
-	for(unsigned i = 0; i < maxAA; i++)
+	for(unsigned i = 0; i < aaListing.size(); i++)
 	{
-		std::string curAA = SequenceSummary::AminoAcidArray[i];
+		std::string curAA = aaListing[i];
 		// skip amino acids with only one codon or stop codons
-		if(curAA == "X" || curAA == "M" || curAA == "W") continue;
 		totalDegenerateAACount += (double)seqsum->getAACountForAA(i);
 	}
 
 	double scuoValue = 0.0;
-	for(unsigned i = 0; i < maxAA; i++)
+	for(unsigned i = 0; i < aaListing.size(); i++)
 	{
-		std::string curAA = SequenceSummary::AminoAcidArray[i];
+		std::string curAA = aaListing[i];
 		// skip amino acids with only one codon or stop codons
-		if(curAA == "X" || curAA == "M" || curAA == "W") continue;
-		double numDegenerateCodons = SequenceSummary::GetNumCodonsForAA(curAA);
+		double numDegenerateCodons = ct->getNumCodonsForAA(curAA);
 
 		double aaCount = (double)seqsum->getAACountForAA(i);
 		if(aaCount == 0) continue;
 
-		unsigned start;
-		unsigned endd;
-		SequenceSummary::AAIndexToCodonRange(i, start, endd, false);
+		std::vector <unsigned> codonRange = ct->AAIndexToCodonRange(i, false);
 
 		// calculate -sum(pij log(pij))
 		double aaEntropy = 0.0;
-		for(unsigned k = start; k < endd; k++)
+		for(unsigned k = 0; k < codonRange.size(); k++)
 		{
-			int currCodonCount = seqsum->getCodonCountForCodon(k);
+			int currCodonCount = seqsum->getCodonCountForCodon(codonRange[k]);
 			if(currCodonCount == 0) continue;
 			double codonProportion = (double)currCodonCount / aaCount;
 			aaEntropy += codonProportion*std::log(codonProportion);

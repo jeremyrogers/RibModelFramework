@@ -96,10 +96,11 @@ void RFPModel::calculateLogLikelihoodRatioPerGene(Gene& gene, unsigned geneIndex
 
 void RFPModel::calculateLogLikelihoodRatioPerGroupingPerCategory(std::string grouping, Genome& genome, double& logAcceptanceRatioForAllMixtures)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	double logLikelihood = 0.0;
 	double logLikelihood_proposed = 0.0;
 	Gene *gene;
-	unsigned index = SequenceSummary::codonToIndex(grouping);
+	unsigned index = ct -> codonToIndex(grouping);
 
 
 #ifndef __APPLE__
@@ -520,6 +521,7 @@ void RFPModel::updateHyperParameter(unsigned hp)
 
 void RFPModel::simulateGenome(Genome &genome)
 {
+	CodonTable *ct = CodonTable::getInstance();
 	for (unsigned geneIndex = 0; geneIndex < genome.getGenomeSize(); geneIndex++)
 	{
 		unsigned mixtureElement = getMixtureAssignment(geneIndex);
@@ -528,7 +530,7 @@ void RFPModel::simulateGenome(Genome &genome)
 		Gene tmpGene = gene;
 		for (unsigned codonIndex = 0; codonIndex < 61; codonIndex++)
 		{
-			std::string codon = SequenceSummary::codonArray[codonIndex];
+			std::string codon = ct -> codonArray[codonIndex];
 			unsigned alphaCat = parameter -> getMutationCategory(mixtureElement);
 			unsigned lambdaPrimeCat = parameter -> getSelectionCategory(mixtureElement);
 
