@@ -1218,7 +1218,7 @@ void testGenome(std::string testFileDir)
     //--------------------------------------------//
 
     std::string file = testFileDir + "/" + "readObservedPhiValues.csv";
-    genome.readObservedPhiValues(file, true);
+    genome.readObservedPhiValues(file, false);
 
 
     //----------------------------//

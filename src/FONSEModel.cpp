@@ -41,10 +41,8 @@ double FONSEModel::calculateLogLikelihoodRatioPerAA(Gene& gene, std::string grou
 		positions = gene.geneData.getCodonPositions(codonRange[i]);
 		for (unsigned j = 0; j < positions->size(); j++) {
 			calculateCodonProbabilityVector(numCodons, positions->at(j), maxIndexVal, mutation, selection, phiValue, codonProb);
-			for (int k = 0; k < numCodons; k++) {
-				if (codonProb[k] == 0) continue;
-				logLikelihood += std::log(codonProb[k]);
-			}
+			if (codonProb[i] == 0) continue;
+			logLikelihood += std::log(codonProb[i]);
 		}
 		//positions->clear();
 	}
@@ -454,27 +452,27 @@ void FONSEModel::updateTracesWithInitialValues(Genome & genome)
 //----------------------------------------------//
 
 
-void FONSEModel::adaptStdDevSynthesisRateProposalWidth(unsigned adaptiveWidth)
+void FONSEModel::adaptStdDevSynthesisRateProposalWidth(unsigned adaptiveWidth, bool adapt)
 {
-	parameter->adaptStdDevSynthesisRateProposalWidth(adaptiveWidth);
+	parameter->adaptStdDevSynthesisRateProposalWidth(adaptiveWidth, adapt);
 }
 
 
-void FONSEModel::adaptSynthesisRateProposalWidth(unsigned adaptiveWidth)
+void FONSEModel::adaptSynthesisRateProposalWidth(unsigned adaptiveWidth, bool adapt)
 {
-	parameter->adaptSynthesisRateProposalWidth(adaptiveWidth);
+	parameter->adaptSynthesisRateProposalWidth(adaptiveWidth, adapt);
 }
 
 
-void FONSEModel::adaptCodonSpecificParameterProposalWidth(unsigned adaptiveWidth)
+void FONSEModel::adaptCodonSpecificParameterProposalWidth(unsigned adaptiveWidth, bool adapt)
 {
-	parameter->adaptCodonSpecificParameterProposalWidth(adaptiveWidth);
+	parameter->adaptCodonSpecificParameterProposalWidth(adaptiveWidth, adapt);
 }
 
 
-void FONSEModel::adaptHyperParameterProposalWidths(unsigned adaptiveWidth)
+void FONSEModel::adaptHyperParameterProposalWidths(unsigned adaptiveWidth, bool adapt)
 {
-	adaptStdDevSynthesisRateProposalWidth(adaptiveWidth);
+	adaptStdDevSynthesisRateProposalWidth(adaptiveWidth, adapt);
 }
 
 

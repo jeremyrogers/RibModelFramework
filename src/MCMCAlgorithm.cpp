@@ -39,6 +39,7 @@ MCMCAlgorithm::MCMCAlgorithm() : samples(1000), thining(1), adaptiveWidth(100 * 
 	lastConvergenceTest = 0u;
 
 	estimateMixtureAssignment = true;
+	stepsToAdapt = -1;
 }
 
 
@@ -55,6 +56,7 @@ MCMCAlgorithm::MCMCAlgorithm(unsigned _samples, unsigned _thining, unsigned _ada
 	fileWriteInterval = 1u;
 	lastConvergenceTest = 0u;
 	estimateMixtureAssignment = true;
+	stepsToAdapt = -1;
 }
 
 
@@ -74,9 +76,12 @@ MCMCAlgorithm::~MCMCAlgorithm()
 
 double MCMCAlgorithm::acceptRejectSynthesisRateLevelForAllGenes(Genome& genome, Model& model, int iteration)
 {
+    FILE * pFile;
+    pFile = fopen ("/home/clandere/Desktop/myfile.txt","a");
 	// TODO move the likelihood calculation out off here. make it a void function again.
 
 	double logLikelihood = 0.0;
+    double logLikelihood2 = 0.0;
 	int numGenes = genome.getGenomeSize();
 
 	unsigned numSynthesisRateCategories = model.getNumSynthesisRateCategories();
@@ -165,10 +170,7 @@ double MCMCAlgorithm::acceptRejectSynthesisRateLevelForAllGenes(Genome& genome, 
 		for(unsigned k = 0u; k < numMixtures; k++)
 		{
 			unscaledLogProb_curr_singleMixture[k] -= maxValue;
-			//TODO compare log vs non log calculation!
-			//probabilities[k] = std::log(model.getCategoryProbability(k)) + unscaledLogProb_curr_singleMixture[k];
-			probabilities[k] = model.getCategoryProbability(k) * unscaledLogProb_curr_singleMixture[k];
-			probabilities[k] = std::exp(probabilities[k]);
+			probabilities[k] = model.getCategoryProbability(k) * std::exp(unscaledLogProb_curr_singleMixture[k]);
 			normalizingProbabilityConstant += probabilities[k];
 		}
 		// normalize probabilities
@@ -186,10 +188,20 @@ double MCMCAlgorithm::acceptRejectSynthesisRateLevelForAllGenes(Genome& genome, 
 			double propLogLike = unscaledLogProb_prop[k];
 			if( -Parameter::randExp(1) < (propLogLike - currLogLike) )
 			{
-				model.updateSynthesisRate(i, k);
-				logLikelihood += probabilities[k] * unscaledLogPost_prop[k];
+                if((iteration % thining) == 0)
+                    fprintf (pFile, "%f\t%s\n",(propLogLike - currLogLike), "TRUE");
+                if(estimateSynthesisRate){
+				    model.updateSynthesisRate(i, k);
+                    //logLikelihood += model.getCategoryProbability(k) * unscaledLogPost_prop[k];
+                    logLikelihood += probabilities[k] * unscaledLogPost_prop[k];                    
+                }else{
+                    logLikelihood += probabilities[k] * unscaledLogPost_curr[k]; // if phi is not estimatedd, it will always stay curr!    
+                }
 			}else{
-				logLikelihood += probabilities[k] * unscaledLogPost_curr[k];
+                if((iteration % thining) == 0)
+                    fprintf (pFile, "%f\t%s\n",(propLogLike - currLogLike), "FALSE");
+				//logLikelihood += model.getCategoryProbability(k) * unscaledLogPost_curr[k];
+                logLikelihood += probabilities[k] * unscaledLogPost_curr[k];
 			}
 		}
 
@@ -235,7 +247,10 @@ double MCMCAlgorithm::acceptRejectSynthesisRateLevelForAllGenes(Genome& genome, 
 	if((iteration % thining) == 0)
 	{
 		model.updateMixtureProbabilitiesTrace(iteration/thining);
+        //std::cout << "Likelihoods:\t" << logLikelihood << "\t" << logLikelihood2 << std::endl;
+        //fprintf (pFile, "%f\t%f\n",logLikelihood,logLikelihood2);
 	}
+    fclose (pFile);
 	delete[] dirichletParameters;
 	delete[] newMixtureProbabilities;
 	return logLikelihood;
@@ -324,12 +339,17 @@ void MCMCAlgorithm::run(Genome& genome, Model& model, unsigned numCores, unsigne
 	// starting the MCMC
 
 	model.updateTracesWithInitialValues(genome);
+	if (stepsToAdapt == -1)
+	{
+		stepsToAdapt = maximumIterations;
+	}
 #ifndef STANDALONE
 	Rprintf("entering MCMC loop\n");
 	Rprintf("\tEstimate Codon Specific Parameters? %s \n", (estimateCodonSpecificParameter ? "TRUE" : "FALSE") );
 	Rprintf("\tEstimate Hyper Parameters? %s \n", (estimateCodonSpecificParameter ? "TRUE" : "FALSE") );
 	Rprintf("\tEstimate Synthesis rates? %s \n", (estimateCodonSpecificParameter ? "TRUE" : "FALSE") );
 	Rprintf("\tStarting MCMC with %d iterations\n", maximumIterations);
+	Rprintf("\tAdapting will stop after %d steps\n", stepsToAdapt);
 
 #else
 	std::cout << "entering MCMC loop" << std::endl;
@@ -337,6 +357,7 @@ void MCMCAlgorithm::run(Genome& genome, Model& model, unsigned numCores, unsigne
 	std::cout << "\tEstimate Hyper Parameters? " << (estimateHyperParameter ? "TRUE" : "FALSE") << std::endl;
 	std::cout << "\tEstimate Synthesis rates? " << (estimateSynthesisRate ? "TRUE" : "FALSE") << std::endl;
 	std::cout << "\tStarting MCMC with " << maximumIterations << " iterations\n";
+	std::cout << "\tAdapting will stop after " << stepsToAdapt << " steps\n";
 #endif
 
 
@@ -356,7 +377,7 @@ void MCMCAlgorithm::run(Genome& genome, Model& model, unsigned numCores, unsigne
 				if (multipleFiles)
 				{
 					std::ostringstream oss;
-					oss << (iteration) / thining << file;
+					oss << (iteration) / thining << "_" << file;
 					std::string tmp = oss.str();
 					model.writeRestartFile(tmp);
 				}
@@ -371,9 +392,17 @@ void MCMCAlgorithm::run(Genome& genome, Model& model, unsigned numCores, unsigne
 #ifndef STANDALONE
 			Rprintf("Status at iteration %d \n", iteration);
 			Rprintf("\t current logLikelihood: %f \n", likelihoodTrace[(iteration/thining) - 1] );
+			if (iteration > stepsToAdapt)
+			{
+				Rprintf("No longer adapting\n");
+			}
 #else
 			std::cout << "Status at iteration " << (iteration) << std::endl;
 			std::cout << "\t current logLikelihood: " << likelihoodTrace[(iteration/thining) - 1] << std::endl;
+			if (iteration > stepsToAdapt)
+			{
+				std::cout <<"No longer adapting\n";
+			}
 #endif
 			model.printHyperParameters();
 			for(unsigned i = 0u; i < model.getNumMixtureElements(); i++)
@@ -389,9 +418,9 @@ void MCMCAlgorithm::run(Genome& genome, Model& model, unsigned numCores, unsigne
 		{
 			model.proposeCodonSpecificParameter();
 			acceptRejectCodonSpecificParameter(genome, model, iteration);
-			if( ( (iteration) % adaptiveWidth) == 0u)
+			if(( (iteration) % adaptiveWidth) == 0u)
 			{
-				model.adaptCodonSpecificParameterProposalWidth(adaptiveWidth);
+				model.adaptCodonSpecificParameterProposalWidth(adaptiveWidth, iteration <= stepsToAdapt);
 			}
 		}
 		// update hyper parameter
@@ -400,13 +429,13 @@ void MCMCAlgorithm::run(Genome& genome, Model& model, unsigned numCores, unsigne
 			model.updateGibbsSampledHyperParameters(genome);
 			model.proposeHyperParameters();
 			acceptRejectHyperParameter(genome, model, iteration);
-			if( ( (iteration) % adaptiveWidth) == 0u)
+			if(( (iteration) % adaptiveWidth) == 0u)
 			{
-				model.adaptHyperParameterProposalWidths(adaptiveWidth);
+				model.adaptHyperParameterProposalWidths(adaptiveWidth, iteration <= stepsToAdapt);
 			}
 		}
 		// update expression level values
-		if(estimateSynthesisRate)
+		if(estimateSynthesisRate || estimateMixtureAssignment)
 		{
 			model.proposeSynthesisRateLevels();
 			double logLike = acceptRejectSynthesisRateLevelForAllGenes(genome, model, iteration);
@@ -414,9 +443,9 @@ void MCMCAlgorithm::run(Genome& genome, Model& model, unsigned numCores, unsigne
 			{
 				likelihoodTrace[(iteration / thining)] = logLike;
 			}
-			if( ( (iteration) % adaptiveWidth) == 0u)
+			if(( (iteration) % adaptiveWidth) == 0u)
 			{
-				model.adaptSynthesisRateProposalWidth(adaptiveWidth);
+				model.adaptSynthesisRateProposalWidth(adaptiveWidth, iteration <= stepsToAdapt);
 			}
 		}
 
@@ -442,7 +471,7 @@ void MCMCAlgorithm::run(Genome& genome, Model& model, unsigned numCores, unsigne
 				std::cout << "Stopping run based on convergence after " << iteration << " iterations\n" << std::endl;
 #endif
 				// Comment out this break to keep the run from stopping on convergence
-				model.setLastIteration(iteration/thining);
+				//model.setLastIteration(iteration/thining);
 				//break;
 			}
 		}
@@ -631,6 +660,22 @@ void MCMCAlgorithm::setRestartFileSettings(std::string filename, unsigned interv
 	writeRestartFile = true;
 }
 
+void MCMCAlgorithm::setStepsToAdapt(unsigned steps)
+{
+	if (steps <= samples * thining)
+	{
+		stepsToAdapt = steps;
+	}
+	else
+	{
+		std::cerr <<"Cannot set steps - value must be smaller than samples times thining (maxIterations)\n";
+	}
+}
+
+int MCMCAlgorithm::getStepsToAdapt()
+{
+	return stepsToAdapt;
+}
 
 std::vector<double> MCMCAlgorithm::getLogLikelihoodTrace()
 {
@@ -847,7 +892,6 @@ void MCMCAlgorithm::setLogLikelihoodTrace(std::vector<double> _likelihoodTrace)
 
 
 
-
 //---------------------------------//
 //---------- RCPP Module ----------//
 //---------------------------------//
@@ -886,6 +930,8 @@ RCPP_MODULE(MCMCAlgorithm_mod)
         .method("setThining", &MCMCAlgorithm::setThining)
         .method("setAdaptiveWidth", &MCMCAlgorithm::setAdaptiveWidth)
         .method("setLogLikelihoodTrace", &MCMCAlgorithm::setLogLikelihoodTrace)
+        .method("setStepsToAdapt", &MCMCAlgorithm::setStepsToAdapt)
+        .method("getStepsToAdapt", &MCMCAlgorithm::getStepsToAdapt)
 		;
 
 

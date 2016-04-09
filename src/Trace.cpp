@@ -354,7 +354,8 @@ unsigned Trace::getSynthesisRateCategory(unsigned mixtureElement)
 //---------- ROC Specific ----------//
 //----------------------------------//
 
-std::vector<double> Trace::getCodonSpecificParameterTraceByMixtureElementForCodon(unsigned mixtureElement, std::string& codon, unsigned paramType)
+std::vector<double> Trace::getCodonSpecificParameterTraceByMixtureElementForCodon(unsigned mixtureElement, std::string& codon, unsigned paramType,
+	bool withoutReference)
 {
 	CodonTable *ct = CodonTable::getInstance();
 	std::vector <double> rv;
@@ -682,13 +683,14 @@ void Trace::setCategories(std::vector<mixtureDefinition> &_categories)
 //----------------------------------//
 //---------- ROC Specific ----------//
 //----------------------------------//
-std::vector<double> Trace::getCodonSpecificParameterTraceByMixtureElementForCodonR(unsigned mixtureElement, std::string& codon, unsigned paramType)
+std::vector<double> Trace::getCodonSpecificParameterTraceByMixtureElementForCodonR(unsigned mixtureElement, std::string& codon, unsigned paramType,
+	bool withoutReference)
 {
 	std::vector<double> RV;
 	bool checkMixtureElement = checkIndex(mixtureElement, 1, getNumberOfMixtures());
 	if (checkMixtureElement)
 	{
-		RV = getCodonSpecificParameterTraceByMixtureElementForCodon(mixtureElement - 1, codon, paramType);
+		RV = getCodonSpecificParameterTraceByMixtureElementForCodon(mixtureElement - 1, codon, paramType, withoutReference);
 	}
 	return RV;
 }

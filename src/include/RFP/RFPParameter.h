@@ -62,7 +62,7 @@ class RFPParameter: public Parameter {
 
 
 		//Adaptive Width Functions:
-		void adaptCodonSpecificParameterProposalWidth(unsigned adaptationWidth); //may make virtual
+		void adaptCodonSpecificParameterProposalWidth(unsigned adaptationWidth, bool adapt); //may make virtual
 
 
 

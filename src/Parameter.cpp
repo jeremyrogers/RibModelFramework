@@ -1095,23 +1095,23 @@ void Parameter::updateMixtureProbabilitiesTrace(unsigned samples)
 // ----------------------------------------------//
 
 
-void Parameter::adaptStdDevSynthesisRateProposalWidth(unsigned adaptationWidth)
+void Parameter::adaptStdDevSynthesisRateProposalWidth(unsigned adaptationWidth, bool adapt)
 {
 	double acceptanceLevel = (double)numAcceptForStdDevSynthesisRate / (double)adaptationWidth;
 	traces.updateStdDevSynthesisRateAcceptanceRatioTrace(acceptanceLevel);
-	if (acceptanceLevel < 0.2)
-	{
-		std_stdDevSynthesisRate *= 0.8;
-	}
-	if (acceptanceLevel > 0.3)
-	{
-		std_stdDevSynthesisRate *= 1.2;
+	if (adapt) {
+		if (acceptanceLevel < 0.2) {
+			std_stdDevSynthesisRate *= 0.8;
+		}
+		if (acceptanceLevel > 0.3) {
+			std_stdDevSynthesisRate *= 1.2;
+		}
 	}
 	numAcceptForStdDevSynthesisRate = 0u;
 }
 
 
-void Parameter::adaptSynthesisRateProposalWidth(unsigned adaptationWidth)
+void Parameter::adaptSynthesisRateProposalWidth(unsigned adaptationWidth, bool adapt)
 {
 	unsigned acceptanceUnder = 0u;
 	unsigned acceptanceOver = 0u;
@@ -1123,15 +1123,15 @@ void Parameter::adaptSynthesisRateProposalWidth(unsigned adaptationWidth)
 		{
 			double acceptanceLevel = (double)numAcceptForSynthesisRate[cat][i] / (double)adaptationWidth;
 			traces.updateSynthesisRateAcceptanceRatioTrace(cat, i, acceptanceLevel);
-			if (acceptanceLevel < 0.225)
-			{
-				std_phi[cat][i] *= 0.8;
-				if (acceptanceLevel < 0.2) acceptanceUnder++;
-			}
-			if (acceptanceLevel > 0.275)
-			{
-				std_phi[cat][i] *= 1.2;
-				if (acceptanceLevel > 0.3) acceptanceOver++;
+			if (adapt) {
+				if (acceptanceLevel < 0.225) {
+					std_phi[cat][i] *= 0.8;
+					if (acceptanceLevel < 0.2) acceptanceUnder++;
+				}
+				if (acceptanceLevel > 0.275) {
+					std_phi[cat][i] *= 1.2;
+					if (acceptanceLevel > 0.3) acceptanceOver++;
+				}
 			}
 			numAcceptForSynthesisRate[cat][i] = 0u;
 		}
@@ -1147,7 +1147,7 @@ void Parameter::adaptSynthesisRateProposalWidth(unsigned adaptationWidth)
 #endif
 }
 
-void Parameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptationWidth)
+void Parameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptationWidth, bool adapt)
 {
 #ifndef STANDALONE
 	Rprintf("Acceptance rate for Codon Specific Parameter\n");
@@ -1167,25 +1167,30 @@ void Parameter::adaptCodonSpecificParameterProposalWidth(unsigned adaptationWidt
 		unsigned aaIndex = ct->AAToAAIndex(aa);
 		double acceptanceLevel = (double)numAcceptForCodonSpecificParameters[aaIndex] / (double)adaptationWidth;
 		traces.updateCodonSpecificAcceptanceRatioTrace(i, acceptanceLevel);
-		std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
-#ifndef STANDALONE
-		Rprintf("\t%s:\t%f\t%f\n", aa.c_str(), acceptanceLevel, std_csp[codonRange[0]]);
-#else
-		std::cout << "\t" << aa << ":\t" << acceptanceLevel << "\t" << std_csp[codonRange[0]] << "\n";
-#endif
-		for (unsigned k = 0; k < codonRange.size(); k++)
+		if (adapt)
 		{
-			if (acceptanceLevel < 0.2)
+			unsigned aaStart;
+			unsigned aaEnd;
+			std::vector <unsigned> codonRange = ct->AAToCodonRange(aa, true);
+#ifndef STANDALONE
+			Rprintf("\t%s:\t%f\t%f\n", aa.c_str(), acceptanceLevel, std_csp[codonRange[0]]);
+#else
+			std::cout << "\t" << aa << ":\t" << acceptanceLevel << "\t" << std_csp[codonRange[0]] << "\n";
+#endif
+			for (unsigned k = 0; k < codonRange.size(); k++)
 			{
-				covarianceMatrix[i] *= 0.8;
-				covarianceMatrix[i].choleskiDecomposition();
-				std_csp[codonRange[k]] *= 0.8;
-			}
-			if (acceptanceLevel > 0.3)
-			{
-				covarianceMatrix[i] *= 1.2;
-				covarianceMatrix[i].choleskiDecomposition();
-				std_csp[codonRange[k]] *= 1.2;
+				if (acceptanceLevel < 0.2)
+				{
+					covarianceMatrix[i] *= 0.8;
+					covarianceMatrix[i].choleskiDecomposition();
+					std_csp[codonRange[k]] *= 0.8;
+				}
+				if (acceptanceLevel > 0.3)
+				{
+					covarianceMatrix[i] *= 1.2;
+					covarianceMatrix[i].choleskiDecomposition();
+					std_csp[codonRange[k]] *= 1.2;
+				}
 			}
 		}
 		numAcceptForCodonSpecificParameters[aaIndex] = 0u;
@@ -1207,7 +1212,7 @@ double Parameter::getStdDevSynthesisRatePosteriorMean(unsigned samples, unsigned
 	double posteriorMean = 0.0;
 	unsigned selectionCategory = getSelectionCategory(mixture);
 	std::vector<double> stdDevSynthesisRateTrace = traces.getStdDevSynthesisRateTrace(selectionCategory);
-	unsigned traceLength = lastIteration;
+	unsigned traceLength = lastIteration + 1;
 
 	if (samples > traceLength)
 	{
@@ -1235,7 +1240,7 @@ double Parameter::getSynthesisRatePosteriorMean(unsigned samples, unsigned geneI
 	unsigned expressionCategory = getSynthesisRateCategory(mixtureElement);
 	double posteriorMean = 0.0;
 	std::vector<double> synthesisRateTrace = traces.getSynthesisRateTraceByMixtureElementForGene(mixtureElement, geneIndex);
-	unsigned traceLength = lastIteration;
+	unsigned traceLength = lastIteration + 1;
 
 	if (samples > lastIteration)
 	{
@@ -1267,12 +1272,14 @@ double Parameter::getSynthesisRatePosteriorMean(unsigned samples, unsigned geneI
 	return posteriorMean / (double)usedSamples;
 }
 
-double Parameter::getCodonSpecificPosteriorMean(unsigned mixtureElement, unsigned samples, std::string &codon, unsigned paramType)
+double Parameter::getCodonSpecificPosteriorMean(unsigned mixtureElement, unsigned samples, std::string &codon, unsigned paramType,
+	bool withoutReference)
 {
 	double posteriorMean = 0.0;
 	std::vector<double> mutationParameterTrace = traces.getCodonSpecificParameterTraceByMixtureElementForCodon(
-		mixtureElement, codon, paramType);
-	unsigned traceLength = lastIteration;
+		mixtureElement, codon, paramType, withoutReference);
+
+	unsigned traceLength = lastIteration + 1;
 
 	if (samples > traceLength)
 	{
@@ -1332,7 +1339,7 @@ double Parameter::getSynthesisRateVariance(unsigned samples, unsigned geneIndex,
 {
 	std::vector<double> synthesisRateTrace = traces.getSynthesisRateTraceByMixtureElementForGene(mixtureElement,
 		geneIndex);
-	unsigned traceLength = lastIteration;
+	unsigned traceLength = lastIteration + 1;
 	if (samples > traceLength)
 	{
 #ifndef STANDALONE
@@ -1364,11 +1371,12 @@ double Parameter::getSynthesisRateVariance(unsigned samples, unsigned geneIndex,
 }
 
 
-double Parameter::getCodonSpecificVariance(unsigned mixtureElement, unsigned samples, std::string &codon, unsigned paramType, bool unbiased)
+double Parameter::getCodonSpecificVariance(unsigned mixtureElement, unsigned samples, std::string &codon, unsigned paramType, bool unbiased,
+	bool withoutReference)
 {
 	std::vector<double> parameterTrace = traces.getCodonSpecificParameterTraceByMixtureElementForCodon(
-		mixtureElement, codon, paramType);
-	unsigned traceLength = lastIteration;
+		mixtureElement, codon, paramType, withoutReference);
+	unsigned traceLength = lastIteration + 1;
 	if (samples > traceLength)
 	{
 #ifndef STANDALONE
@@ -1420,7 +1428,7 @@ std::vector<double> Parameter::getEstimatedMixtureAssignmentProbabilities(unsign
 {
 	std::vector<unsigned> mixtureAssignmentTrace = traces.getMixtureAssignmentTraceForGene(geneIndex);
 	std::vector<double> probabilities(numMixtures, 0.0);
-	unsigned traceLength = lastIteration;
+	unsigned traceLength = lastIteration + 1;
 
 	if (samples > traceLength)
 	{
@@ -1958,7 +1966,8 @@ std::vector<double> Parameter::getCurrentSynthesisRateForMixture(unsigned mixtur
 // ---------- Posterior, Variance, and Estimates Functions ----------//
 // ------------------------------------------------------------------//
 
-double Parameter::getCodonSpecificPosteriorMeanForCodon(unsigned mixtureElement, unsigned samples, std::string codon, unsigned paramType)
+double Parameter::getCodonSpecificPosteriorMeanForCodon(unsigned mixtureElement, unsigned samples, std::string codon, unsigned paramType,
+	bool withoutReference)
 {
 	double rv = -1.0;
 	codon[0] = (char)std::toupper(codon[0]);
@@ -1967,13 +1976,14 @@ double Parameter::getCodonSpecificPosteriorMeanForCodon(unsigned mixtureElement,
 	bool check = checkIndex(mixtureElement, 1, numMixtures);
 	if (check)
 	{
-		rv = getCodonSpecificPosteriorMean(mixtureElement - 1, samples, codon, paramType);
+		rv = getCodonSpecificPosteriorMean(mixtureElement - 1, samples, codon, paramType, withoutReference);
 	}
 	return rv;
 }
 
 
-double Parameter::getCodonSpecificVarianceForCodon(unsigned mixtureElement, unsigned samples, std::string codon, unsigned paramType, bool unbiased)
+double Parameter::getCodonSpecificVarianceForCodon(unsigned mixtureElement, unsigned samples, std::string codon, unsigned paramType, bool unbiased,
+	bool withoutReference)
 {
 	double rv = -1.0;
 	codon[0] = (char)std::toupper(codon[0]);
@@ -1982,7 +1992,7 @@ double Parameter::getCodonSpecificVarianceForCodon(unsigned mixtureElement, unsi
 	bool check = checkIndex(mixtureElement, 1, numMixtures);
 	if (check)
 	{
-		rv = getCodonSpecificVariance(mixtureElement - 1, samples, codon, paramType, unbiased);
+		rv = getCodonSpecificVariance(mixtureElement - 1, samples, codon, paramType, unbiased, withoutReference);
 	}
 	return rv;
 }
