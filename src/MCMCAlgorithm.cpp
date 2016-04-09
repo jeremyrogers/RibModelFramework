@@ -76,8 +76,8 @@ MCMCAlgorithm::~MCMCAlgorithm()
 
 double MCMCAlgorithm::acceptRejectSynthesisRateLevelForAllGenes(Genome& genome, Model& model, int iteration)
 {
-    FILE * pFile;
-    pFile = fopen ("/home/clandere/Desktop/myfile.txt","a");
+    //FILE * pFile;
+    //pFile = fopen ("/home/clandere/Desktop/myfile.txt","a");
 	// TODO move the likelihood calculation out off here. make it a void function again.
 
 	double logLikelihood = 0.0;
@@ -189,7 +189,7 @@ double MCMCAlgorithm::acceptRejectSynthesisRateLevelForAllGenes(Genome& genome, 
 			if( -Parameter::randExp(1) < (propLogLike - currLogLike) )
 			{
                 if((iteration % thining) == 0)
-                    fprintf (pFile, "%f\t%s\n",(propLogLike - currLogLike), "TRUE");
+                    //fprintf (pFile, "%f\t%s\n",(propLogLike - currLogLike), "TRUE");
                 if(estimateSynthesisRate){
 				    model.updateSynthesisRate(i, k);
                     //logLikelihood += model.getCategoryProbability(k) * unscaledLogPost_prop[k];
@@ -199,7 +199,7 @@ double MCMCAlgorithm::acceptRejectSynthesisRateLevelForAllGenes(Genome& genome, 
                 }
 			}else{
                 if((iteration % thining) == 0)
-                    fprintf (pFile, "%f\t%s\n",(propLogLike - currLogLike), "FALSE");
+                    //fprintf (pFile, "%f\t%s\n",(propLogLike - currLogLike), "FALSE");
 				//logLikelihood += model.getCategoryProbability(k) * unscaledLogPost_curr[k];
                 logLikelihood += probabilities[k] * unscaledLogPost_curr[k];
 			}
@@ -250,7 +250,7 @@ double MCMCAlgorithm::acceptRejectSynthesisRateLevelForAllGenes(Genome& genome, 
         //std::cout << "Likelihoods:\t" << logLikelihood << "\t" << logLikelihood2 << std::endl;
         //fprintf (pFile, "%f\t%f\n",logLikelihood,logLikelihood2);
 	}
-    fclose (pFile);
+    //fclose (pFile);
 	delete[] dirichletParameters;
 	delete[] newMixtureProbabilities;
 	return logLikelihood;
