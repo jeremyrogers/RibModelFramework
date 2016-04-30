@@ -43,7 +43,8 @@ class SequenceSummary
 		SequenceSummary(const SequenceSummary& other);
 		SequenceSummary& operator=(const SequenceSummary& other);
 		bool operator==(const SequenceSummary& other) const;
-		virtual ~SequenceSummary(); //TODO:Why is this virtual????
+		virtual ~SequenceSummary(); // All deconstructors are virtual because of some object oriented stuff, see more here:
+		// http://stackoverflow.com/questions/461203/when-to-use-virtual-destructors
 
 
 

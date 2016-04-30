@@ -407,12 +407,12 @@ int main()
 {
 	unsigned index;
 	bool fromRestart = false;
-	std::string modelToRun = "ROC";
+	std::string modelToRun = "FONSE";
 	bool withPhi = false;
 
 	
 	std::cout << "Initializing MCMCAlgorithm object---------------" << std::endl;
-	int samples = 100;
+	int samples = 1000;
 	int thining = 10;
 	int useSamples = 100;
 	unsigned numMixtures = 1;
@@ -426,7 +426,7 @@ int main()
 	if (modelToRun == "FONSE") {
 		std::cout << "initialize Genome object--------------------------" << std::endl;
 		Genome genome;
-		genome.readFasta("C:/Users/Jeremy/Documents/GitHub/RibModelDev/data/FONSE/nse2000.fasta");
+		genome.readFasta("C:/Users/Jeremy/Documents/GitHub/RibModelDev/data/FONSE/simulatedFONSE_phiScaled1000_b-0.001.fasta");
 		std::cout << "Done!-------------------------------\n\n\n";
 
 
@@ -465,11 +465,13 @@ int main()
 			std::cout << "\t# mixtures: " << numMixtures << "\n";
 			std::cout << "\tmixture definition: " << mixDef << "\n";
 
-			//std::vector<std::string> files(1);
-			//files[0] = std::string("C:/Users/Jeremy/Documents/GitHub/RibModelDev/data/FONSE/Scereviciae.mut.csv");
-			//tmp.initMutationCategories(files, tmp.getNumMutationCategories());
+			std::vector<std::string> files(1);
+			files[0] = std::string("C:/Users/Jeremy/Documents/GitHub/RibModelDev/data/FONSE/S.cer.mut.ref.csv");
+			tmp.initMutationCategories(files, tmp.getNumMutationCategories());
+			files[0] = std::string("C:/Users/Jeremy/Documents/GitHub/RibModelDev/data/FONSE/deltaomega_b-0.001.csv");
+			tmp.initSelectionCategories(files, tmp.getNumSelectionCategories());
 			//tmp.InitializeSynthesisRate(genome, sphi_init[0]);
-			std::vector<double> phiVals = parameter.readPhiValues("C:/Users/Jeremy/Documents/GitHub/RibModelDev/data/FONSE/nse2000.phi.csv");
+			std::vector<double> phiVals = parameter.readPhiValues("C:/Users/Jeremy/Documents/GitHub/RibModelDev/data/FONSE/simFONSE_scaled1000.phi.csv");
 			tmp.InitializeSynthesisRate(phiVals);
 			parameter = tmp;
 		}
@@ -478,15 +480,14 @@ int main()
 
 		std::cout << "Initializing Model object\n";
 
-		bool withPhi = true;
 		FONSEModel model;
 		//ROCModel model(withPhi);
 		model.setParameter(parameter);
 
 
-		std::cout << "starting MCMC for ROC" << std::endl;
+		std::cout << "starting MCMC for FONSE" << std::endl;
 		mcmc.run(genome, model, 4, 0);
-		std::cout << std::endl << "Finished MCMC for ROC" << std::endl;
+		std::cout << std::endl << "Finished MCMC for FONSE" << std::endl;
 	}
 	else if (modelToRun == "RFP")
 	{
